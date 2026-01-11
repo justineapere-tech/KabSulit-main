@@ -13,6 +13,7 @@ import {
 import { supabase } from '../config/supabase';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../config/theme';
 import ConfirmModal from '../components/ConfirmModal';
+import SaveToCollectionsModal from '../components/SaveToCollectionsModal';
 
 export default function ItemDetailScreen({ route, navigation }) {
   const params = route.params || {};
@@ -25,6 +26,7 @@ export default function ItemDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmPayload, setConfirmPayload] = useState(null);
+  const [saveModalVisible, setSaveModalVisible] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -208,15 +210,23 @@ export default function ItemDetailScreen({ route, navigation }) {
         </View>
 
         {!isOwner && (
-          <TouchableOpacity
-            style={styles.messageButton}
-            onPress={() => navigation.navigate('Chat', {
-              otherUserId: item.user_id,
-              otherUserName: seller?.full_name || 'Seller',
-            })}
-          >
-            <Text style={styles.messageButtonText}>Message Seller</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.button, styles.saveButton]}
+              onPress={() => setSaveModalVisible(true)}
+            >
+              <Text style={styles.buttonText}>💾 Save Item</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.messageButton]}
+              onPress={() => navigation.navigate('Chat', {
+                otherUserId: item.user_id,
+                otherUserName: seller?.full_name || 'Seller',
+              })}
+            >
+              <Text style={styles.buttonText}>Message Seller</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {isOwner && (
@@ -233,6 +243,15 @@ export default function ItemDetailScreen({ route, navigation }) {
         onConfirm={handleConfirmProceed}
         cancelLabel="Cancel"
         confirmLabel="Delete"
+      />
+      <SaveToCollectionsModal
+        visible={saveModalVisible}
+        itemId={item?.id}
+        userId={currentUser?.id}
+        onClose={() => setSaveModalVisible(false)}
+        onSaveSuccess={() => {
+          // Optional: Show feedback
+        }}
       />
     </ScrollView>
   );
@@ -309,27 +328,29 @@ const styles = StyleSheet.create({
   statusAvailable: {
     color: '#34C759',
   },
-  deleteButton: {
-    backgroundColor: '#FF3B30',
+  buttonContainer: {
+    flexDirection: 'column',
+    gap: 10,
+    marginTop: 20,
+  },
+  button: {
     borderRadius: 8,
     padding: 15,
     alignItems: 'center',
-    marginTop: 20,
+    fontWeight: '600',
   },
-  deleteButtonText: {
+  saveButton: {
+    backgroundColor: COLORS.secondary,
+  },
+  messageButton: {
+    backgroundColor: COLORS.primary,
+  },
+  buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  messageButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 12,
-    ...SHADOWS.small,
-  },
-  messageButtonText: {
+  deleteButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

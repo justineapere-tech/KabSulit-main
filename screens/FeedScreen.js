@@ -14,6 +14,7 @@ import {
   Platform,
 } from "react-native";
 import ConfirmModal from '../components/ConfirmModal';
+import SaveToCollectionsModal from '../components/SaveToCollectionsModal';
 import { supabase } from "../config/supabase";
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from "../config/theme";
 
@@ -31,6 +32,8 @@ export default function FeedScreen({ navigation }) {
   const [deletingId, setDeletingId] = useState(null);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmPayload, setConfirmPayload] = useState(null);
+  const [saveModalVisible, setSaveModalVisible] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState(null);
 
   useEffect(() => {
     getCurrentUser();
@@ -179,6 +182,15 @@ export default function FeedScreen({ navigation }) {
     }
   };
 
+  const handleSavePress = (itemId) => {
+    if (!currentUser) {
+      Alert.alert('Login required', 'Please login to save items');
+      return;
+    }
+    setSelectedItemId(itemId);
+    setSaveModalVisible(true);
+  };
+
   const handleConfirmCancel = () => {
     setConfirmVisible(false);
     setConfirmPayload(null);
@@ -304,6 +316,13 @@ export default function FeedScreen({ navigation }) {
           <Text style={styles.actionIcon}>💬</Text>
           <Text style={styles.actionLabel}>Comment</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleSavePress(item.id)}
+        >
+          <Text style={styles.actionIcon}>💾</Text>
+          <Text style={styles.actionLabel}>Save</Text>
+        </TouchableOpacity>
         {currentUser?.id !== item.user_id && (
           <TouchableOpacity
             style={styles.actionButton}
@@ -424,6 +443,15 @@ export default function FeedScreen({ navigation }) {
         onConfirm={handleConfirmProceed}
         cancelLabel="Cancel"
         confirmLabel="Delete"
+      />
+      <SaveToCollectionsModal
+        visible={saveModalVisible}
+        itemId={selectedItemId}
+        userId={currentUser?.id}
+        onClose={() => setSaveModalVisible(false)}
+        onSaveSuccess={() => {
+          // Optional: Show feedback or reload data
+        }}
       />
     </View>
   );

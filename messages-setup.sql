@@ -32,11 +32,13 @@ CREATE POLICY "Users can insert their own messages"
     auth.uid() = sender_id
   );
 
--- RLS Policy: Users cannot delete messages (optional - adjust if needed)
-CREATE POLICY "Users cannot delete messages"
+-- RLS Policy: Users can delete messages where they are sender or receiver
+CREATE POLICY "Users can delete their own messages"
   ON messages
   FOR DELETE
-  USING (false);
+  USING (
+    auth.uid() = sender_id OR auth.uid() = receiver_id
+  );
 
 -- RLS Policy: Users cannot update messages (optional - adjust if needed)
 CREATE POLICY "Users cannot update messages"

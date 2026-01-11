@@ -17,7 +17,7 @@ import MyItemsScreen from './screens/MyItemsScreen';
 import MessagesScreen from './screens/MessagesScreen';
 import ChatScreen from './screens/ChatScreen';
 import CommentsScreen from './screens/CommentsScreen';
-import SettingsScreen from './screens/SettingsScreen';
+import SaveScreen from './screens/SaveScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -78,12 +78,12 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
+        name="Save"
+        component={SaveScreen}
         options={{
-          tabBarLabel: 'Settings',
+          tabBarLabel: 'Saved',
           tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>⚙️</Text>
+            <Text style={{ color, fontSize: 20 }}>💾</Text>
           ),
         }}
       />
@@ -147,6 +147,11 @@ export default function App() {
             name="Comments"
             component={CommentsScreen}
             options={{ headerShown: true, title: 'Comments & Reviews', headerBackTitle: 'Back' }}
+          />
+          <Stack.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ headerShown: true, title: 'Profile' }}
           />
         </Stack.Navigator>
       ) : (

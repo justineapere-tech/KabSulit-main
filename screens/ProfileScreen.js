@@ -10,9 +10,14 @@ import {
   ActivityIndicator,
   Image,
   FlatList,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { supabase } from "../config/supabase";
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from "../config/theme";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function ProfileScreen({ navigation, route }) {
   const [user, setUser] = useState(null);
@@ -25,6 +30,15 @@ export default function ProfileScreen({ navigation, route }) {
 
   // State to track if we should show own profile
   const [forceOwnProfile, setForceOwnProfile] = useState(false);
+
+  // Edit Profile Modal States
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingName, setEditingName] = useState("");
+  const [editingCampusId, setEditingCampusId] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Logout Confirmation Modal States
+  const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
 
   // Load profile on mount or when route params change
   useEffect(() => {
@@ -145,6 +159,60 @@ export default function ProfileScreen({ navigation, route }) {
     </TouchableOpacity>
   );
 
+  const handleEditProfile = () => {
+    if (profile) {
+      setEditingName(profile.full_name || "");
+      setEditingCampusId(profile.campus_id || "");
+      setEditModalVisible(true);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSavingProfile(true);
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: editingName,
+          campus_id: editingCampusId,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProfile({
+        ...profile,
+        full_name: editingName,
+        campus_id: editingCampusId,
+      });
+
+      setEditModalVisible(false);
+      Alert.alert("Success", "Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      Alert.alert("Error", error.message || "Failed to update profile");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setLogoutConfirmVisible(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setLogoutConfirmVisible(false);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigation.navigate("Login");
+    } catch (err) {
+      console.error("Logout error:", err);
+      Alert.alert("Error", err.message || "Failed to logout");
+    }
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Back Button - only show when viewing another user */}
@@ -241,10 +309,19 @@ export default function ProfileScreen({ navigation, route }) {
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.settingItem}
-            onPress={() => navigation.navigate("Settings")}
+            onPress={handleEditProfile}
           >
-            <Text style={styles.settingIcon}>⚙️</Text>
-            <Text style={styles.settingText}>Settings & Security</Text>
+            <Text style={styles.settingIcon}>✏️</Text>
+            <Text style={styles.settingText}>Edit Profile</Text>
+            <Text style={styles.settingArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.settingItem, styles.settingItemBorder]}
+            onPress={handleLogout}
+          >
+            <Text style={styles.settingIcon}>🚪</Text>
+            <Text style={styles.settingText}>Logout</Text>
             <Text style={styles.settingArrow}>›</Text>
           </TouchableOpacity>
         </View>
@@ -270,6 +347,81 @@ export default function ProfileScreen({ navigation, route }) {
           <Text style={styles.emptyItemsText}>No items listed yet</Text>
         </View>
       )}
+
+      {/* Edit Profile Modal */}
+      <Modal visible={editModalVisible} transparent animationType="slide">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                  <Text style={styles.modalCloseButton}>✕</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Edit Profile</Text>
+                <View style={{ width: 30 }} />
+              </View>
+
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Full Name</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Enter your full name"
+                    value={editingName}
+                    onChangeText={setEditingName}
+                    placeholderTextColor={COLORS.textLight}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Campus ID</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Enter your campus ID"
+                    value={editingCampusId}
+                    onChangeText={setEditingCampusId}
+                    placeholderTextColor={COLORS.textLight}
+                  />
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => setEditModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalSaveButton]}
+                  onPress={handleSaveProfile}
+                  disabled={savingProfile}
+                >
+                  {savingProfile ? (
+                    <ActivityIndicator color={COLORS.white} />
+                  ) : (
+                    <Text style={styles.modalSaveButtonText}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmModal
+        visible={logoutConfirmVisible}
+        title="Logout"
+        message="Are you sure you want to logout?"
+        onCancel={() => setLogoutConfirmVisible(false)}
+        onConfirm={handleConfirmLogout}
+        cancelLabel="Cancel"
+        confirmLabel="Logout"
+      />
 
       <View style={{ height: SPACING.xxl }} />
     </ScrollView>
@@ -543,5 +695,98 @@ const styles = StyleSheet.create({
     fontSize: SIZES.lg,
     color: COLORS.primary,
     fontWeight: '700',
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: BORDER_RADIUS.xl,
+    borderTopRightRadius: BORDER_RADIUS.xl,
+    maxHeight: '90%',
+    paddingBottom: SPACING.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.text,
+    flex: 1,
+    textAlign: 'center',
+  },
+  modalCloseButton: {
+    fontSize: SIZES.xl,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  modalBody: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+  },
+  inputGroup: {
+    marginBottom: SPACING.lg,
+  },
+  inputLabel: {
+    fontSize: SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    fontSize: SIZES.md,
+    color: COLORS.text,
+    fontFamily: 'Segoe UI',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    gap: SPACING.md,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: COLORS.gray100,
+  },
+  modalCancelButtonText: {
+    color: COLORS.text,
+    fontWeight: '600',
+    fontSize: SIZES.md,
+  },
+  modalSaveButton: {
+    backgroundColor: COLORS.primary,
+  },
+  modalSaveButtonText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: SIZES.md,
+  },
+  settingItemBorder: {
+    marginTop: SPACING.md,
   },
 });
