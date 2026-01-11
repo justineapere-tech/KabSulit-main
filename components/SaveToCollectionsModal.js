@@ -282,7 +282,7 @@ export default function SaveToCollectionsModal({
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator color={COLORS.white} />
+                  <ActivityIndicator color={COLORS.primary.onPrimary} />
                 ) : (
                   <Text style={styles.saveButtonText}>Save Item</Text>
                 )}
@@ -420,10 +420,10 @@ const styles = StyleSheet.create({
     fontSize: SIZES.md,
   },
   saveButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary.main,
   },
   saveButtonText: {
-    color: COLORS.white,
+    color: COLORS.primary.onPrimary,
     fontWeight: '700',
     fontSize: SIZES.md,
   },

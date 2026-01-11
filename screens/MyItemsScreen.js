@@ -12,8 +12,10 @@ import {
   Platform,
 } from 'react-native';
 import { supabase } from '../config/supabase';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from '../config/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from '../config/theme';
 import ConfirmModal from '../components/ConfirmModal';
+import Button from '../components/Button';
+import Chip from '../components/Chip';
 
 export default function MyItemsScreen({ navigation }) {
   const [items, setItems] = useState([]);
@@ -217,12 +219,13 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    padding: SPACING.lg,
-    paddingTop: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: Platform.OS === 'ios' ? 50 : SPACING.lg,
+    paddingBottom: SPACING.lg,
+    ...SHADOWS.sm,
   },
   headerTitle: {
-    fontSize: SIZES.xl,
-    fontWeight: '700',
+    ...TYPOGRAPHY.styles.h2,
     color: COLORS.white,
   },
   listContent: {

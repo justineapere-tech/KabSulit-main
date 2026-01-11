@@ -11,13 +11,17 @@ import {
   Image,
   FlatList,
   Modal,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { supabase } from "../config/supabase";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from "../config/theme";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, LAYOUT } from "../config/theme";
 import ConfirmModal from "../components/ConfirmModal";
+import Avatar from "../components/Avatar";
+import Card from "../components/Card";
+import Button from "../components/Button";
+import Input from "../components/Input";
+import EmptyState from "../components/EmptyState";
 
 export default function ProfileScreen({ navigation, route }) {
   const [user, setUser] = useState(null);
@@ -35,6 +39,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingName, setEditingName] = useState("");
   const [editingCampusId, setEditingCampusId] = useState("");
+  const [editingBio, setEditingBio] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Logout Confirmation Modal States
@@ -113,45 +118,49 @@ export default function ProfileScreen({ navigation, route }) {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary.main} />
+        <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     );
   }
 
   if (!profile) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.noUserText}>Profile not found</Text>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.loginButtonText}>Go Back</Text>
-        </TouchableOpacity>
+      <View style={styles.loadingContainer}>
+        <EmptyState
+          icon={<Text style={styles.emptyIcon}>👤</Text>}
+          title="Profile Not Found"
+          description="This profile doesn't exist or has been removed"
+          actionLabel="Go Back"
+          onAction={() => navigation.goBack()}
+        />
       </View>
     );
   }
 
   const renderItemCard = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.itemCard}
       onPress={() => navigation.navigate("ItemDetail", { itemId: item.id })}
+      activeOpacity={0.9}
     >
-      <View style={styles.itemImageContainer}>
-        {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={styles.itemImage} />
-        ) : (
-          <View style={[styles.itemImage, styles.placeholderImage]}>
-            <Text style={styles.placeholderText}>📷</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.itemPrice}>{item.price ? `₱${parseFloat(item.price).toFixed(2)}` : 'Free'}</Text>
+      {item.image_url ? (
+        <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+      ) : (
+        <View style={[styles.itemImage, styles.itemPlaceholder]}>
+          <Text style={styles.itemPlaceholderIcon}>📦</Text>
+        </View>
+      )}
+      <View style={styles.itemDetails}>
+        <Text style={styles.itemTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text style={styles.itemPrice}>
+          {item.price ? `₱${parseFloat(item.price).toLocaleString()}` : 'Free'}
+        </Text>
         {item.category && (
-          <View style={styles.itemCategory}>
+          <View style={styles.itemCategoryBadge}>
             <Text style={styles.itemCategoryText}>{item.category}</Text>
           </View>
         )}
@@ -163,6 +172,7 @@ export default function ProfileScreen({ navigation, route }) {
     if (profile) {
       setEditingName(profile.full_name || "");
       setEditingCampusId(profile.campus_id || "");
+      setEditingBio(profile.bio || "");
       setEditModalVisible(true);
     }
   };
@@ -175,16 +185,17 @@ export default function ProfileScreen({ navigation, route }) {
         .update({
           full_name: editingName,
           campus_id: editingCampusId,
+          bio: editingBio,
         })
         .eq("id", user.id);
 
       if (error) throw error;
 
-      // Update local state
       setProfile({
         ...profile,
         full_name: editingName,
         campus_id: editingCampusId,
+        bio: editingBio,
       });
 
       setEditModalVisible(false);
@@ -206,7 +217,6 @@ export default function ProfileScreen({ navigation, route }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      navigation.navigate("Login");
     } catch (err) {
       console.error("Logout error:", err);
       Alert.alert("Error", err.message || "Failed to logout");
@@ -214,139 +224,158 @@ export default function ProfileScreen({ navigation, route }) {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Back Button - only show when viewing another user */}
-      {!isOwnProfile && (
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => {
-            // Clear the userId param to show own profile
-            previousUserIdRef.current = null;
-            navigation.setParams({ userId: undefined });
-            loadUserProfile(null);
-          }}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-      )}
-      
-      {/* Header Background */}
-      <View style={styles.headerBackground} />
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Header Section */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            {!isOwnProfile && (
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  previousUserIdRef.current = null;
+                  navigation.setParams({ userId: undefined });
+                  loadUserProfile(null);
+                }}
+              >
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+            )}
+            <View style={styles.headerSpacer} />
+          </View>
+        </View>
 
-      {/* Profile Card */}
-      <View style={styles.profileCard}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {profile?.full_name
-                ? profile.full_name.charAt(0).toUpperCase()
-                : 'U'}
+        {/* Profile Info Card */}
+        <View style={styles.profileSection}>
+          <Card style={styles.profileCard}>
+            <View style={styles.profileHeader}>
+              <Avatar
+                name={profile?.full_name}
+                size="xl"
+                style={styles.profileAvatar}
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>
+                  {profile?.full_name || "Student User"}
+                </Text>
+                {profile?.campus_id && (
+                  <View style={styles.campusIdBadge}>
+                    <Text style={styles.campusIdText}>ID: {profile.campus_id}</Text>
+                  </View>
+                )}
+                {profile?.bio && (
+                  <Text style={styles.profileBio}>{profile.bio}</Text>
+                )}
+              </View>
+            </View>
+
+            {/* Stats Row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{itemCount}</Text>
+                <Text style={styles.statLabel}>Listings</Text>
+              </View>
+              <View style={[styles.statBox, styles.statBoxBorder]}>
+                <Text style={styles.statIcon}>⭐</Text>
+                <Text style={styles.statLabel}>New Seller</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>100%</Text>
+                <Text style={styles.statLabel}>Responsive</Text>
+              </View>
+            </View>
+
+            {/* Own Profile Actions */}
+            {isOwnProfile && (
+              <View style={styles.profileActions}>
+                <Button
+                  title="Edit Profile"
+                  onPress={handleEditProfile}
+                  variant="outline"
+                  size="medium"
+                  style={styles.editButton}
+                />
+                <Button
+                  title="Logout"
+                  onPress={handleLogout}
+                  variant="text"
+                  size="medium"
+                />
+              </View>
+            )}
+          </Card>
+
+          {/* Quick Actions (Only for own profile) */}
+          {isOwnProfile && (
+            <View style={styles.quickActions}>
+              <Card
+                style={styles.actionCard}
+                onPress={() => navigation.navigate("PostItem")}
+              >
+                <View style={styles.actionCardContent}>
+                  <View style={styles.actionIconCircle}>
+                    <Text style={styles.actionIcon}>➕</Text>
+                  </View>
+                  <View style={styles.actionText}>
+                    <Text style={styles.actionTitle}>Post New Item</Text>
+                    <Text style={styles.actionDescription}>List something for sale</Text>
+                  </View>
+                </View>
+              </Card>
+
+              <Card
+                style={styles.actionCard}
+                onPress={() => navigation.navigate("MyItems")}
+              >
+                <View style={styles.actionCardContent}>
+                  <View style={styles.actionIconCircle}>
+                    <Text style={styles.actionIcon}>📦</Text>
+                  </View>
+                  <View style={styles.actionText}>
+                    <Text style={styles.actionTitle}>My Listings</Text>
+                    <Text style={styles.actionDescription}>Manage your items</Text>
+                  </View>
+                </View>
+              </Card>
+            </View>
+          )}
+
+          {/* Items Section */}
+          <View style={styles.itemsSection}>
+            <Text style={styles.sectionTitle}>
+              {isOwnProfile ? "Your Listings" : "Items Listed"}
             </Text>
+
+            {userItems.length > 0 ? (
+              <FlatList
+                data={userItems}
+                renderItem={renderItemCard}
+                keyExtractor={(item) => item.id}
+                numColumns={2}
+                scrollEnabled={false}
+                columnWrapperStyle={styles.itemsRow}
+              />
+            ) : (
+              <EmptyState
+                icon={<Text style={styles.emptyIcon}>📦</Text>}
+                title="No items listed"
+                description={
+                  isOwnProfile
+                    ? "Start selling by posting your first item"
+                    : "This user hasn't listed any items yet"
+                }
+                actionLabel={isOwnProfile ? "Post Item" : null}
+                onAction={isOwnProfile ? () => navigation.navigate("PostItem") : null}
+                style={styles.emptyListings}
+              />
+            )}
           </View>
         </View>
-        <Text style={styles.name}>{profile?.full_name || "Student User"}</Text>
-        {user?.email && <Text style={styles.email}>{user.email}</Text>}
-      </View>
-
-      {/* Stats Section */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{itemCount}</Text>
-          <Text style={styles.statLabel}>Items Listed</Text>
-        </View>
-        <View style={[styles.statItem, styles.statDivider]}>
-          <Text style={styles.statNumber}>⭐</Text>
-          <Text style={styles.statLabel}>New Seller</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>100%</Text>
-          <Text style={styles.statLabel}>Responsive</Text>
-        </View>
-      </View>
-
-      {/* Action Buttons - Only for own profile */}
-      {isOwnProfile && (
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate("PostItem")}
-          >
-            <Text style={styles.actionButtonIcon}>➕</Text>
-            <View style={styles.actionButtonContent}>
-              <Text style={styles.actionButtonTitle}>Post New Item</Text>
-              <Text style={styles.actionButtonDesc}>Sell something today</Text>
-            </View>
-            <Text style={styles.actionButtonArrow}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionButtonBorder]}
-            onPress={() => navigation.navigate("MyItems")}
-          >
-            <Text style={styles.actionButtonIcon}>📦</Text>
-            <View style={styles.actionButtonContent}>
-              <Text style={styles.actionButtonTitle}>My Items</Text>
-              <Text style={styles.actionButtonDesc}>Manage your listings</Text>
-            </View>
-            <Text style={styles.actionButtonArrow}>›</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Profile Info Section */}
-      {profile?.campus_id && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Campus Info</Text>
-          <View style={styles.infoBox}>
-            <Text style={styles.infoLabel}>Campus ID</Text>
-            <Text style={styles.infoValue}>{profile.campus_id}</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Settings - Only for own profile */}
-      {isOwnProfile && (
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={handleEditProfile}
-          >
-            <Text style={styles.settingIcon}>✏️</Text>
-            <Text style={styles.settingText}>Edit Profile</Text>
-            <Text style={styles.settingArrow}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.settingItem, styles.settingItemBorder]}
-            onPress={handleLogout}
-          >
-            <Text style={styles.settingIcon}>🚪</Text>
-            <Text style={styles.settingText}>Logout</Text>
-            <Text style={styles.settingArrow}>›</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Items Section */}
-      {userItems.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Items Listed</Text>
-          <FlatList
-            data={userItems}
-            renderItem={renderItemCard}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            scrollEnabled={false}
-            columnWrapperStyle={styles.itemsGridRow}
-          />
-        </View>
-      )}
-
-      {userItems.length === 0 && !isOwnProfile && (
-        <View style={styles.emptyItemsContainer}>
-          <Text style={styles.emptyItemsText}>No items listed yet</Text>
-        </View>
-      )}
+      </ScrollView>
 
       {/* Edit Profile Modal */}
       <Modal visible={editModalVisible} transparent animationType="slide">
@@ -357,62 +386,65 @@ export default function ProfileScreen({ navigation, route }) {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                  <Text style={styles.modalCloseButton}>✕</Text>
-                </TouchableOpacity>
                 <Text style={styles.modalTitle}>Edit Profile</Text>
-                <View style={{ width: 30 }} />
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                  <Text style={styles.modalCloseIcon}>✕</Text>
+                </TouchableOpacity>
               </View>
 
               <ScrollView style={styles.modalBody}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Full Name</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="Enter your full name"
-                    value={editingName}
-                    onChangeText={setEditingName}
-                    placeholderTextColor={COLORS.textLight}
-                  />
-                </View>
+                <Input
+                  label="Full Name"
+                  value={editingName}
+                  onChangeText={setEditingName}
+                  placeholder="Enter your full name"
+                  leftIcon={<Text style={styles.inputIcon}>👤</Text>}
+                />
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Campus ID</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="Enter your campus ID"
-                    value={editingCampusId}
-                    onChangeText={setEditingCampusId}
-                    placeholderTextColor={COLORS.textLight}
-                  />
-                </View>
+                <Input
+                  label="Campus ID"
+                  value={editingCampusId}
+                  onChangeText={setEditingCampusId}
+                  placeholder="Enter your campus ID"
+                  leftIcon={<Text style={styles.inputIcon}>🎓</Text>}
+                />
+
+                <Input
+                  label="Bio"
+                  value={editingBio}
+                  onChangeText={setEditingBio}
+                  placeholder="Tell others about yourself..."
+                  multiline
+                  numberOfLines={4}
+                  maxLength={200}
+                  showCharacterCount
+                  leftIcon={<Text style={styles.inputIcon}>📝</Text>}
+                />
               </ScrollView>
 
-              <View style={styles.modalFooter}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalCancelButton]}
+              <View style={styles.modalActions}>
+                <Button
+                  title="Cancel"
                   onPress={() => setEditModalVisible(false)}
-                >
-                  <Text style={styles.modalCancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalSaveButton]}
+                  variant="outline"
+                  size="large"
+                  style={styles.modalButton}
+                />
+                <Button
+                  title="Save"
                   onPress={handleSaveProfile}
-                  disabled={savingProfile}
-                >
-                  {savingProfile ? (
-                    <ActivityIndicator color={COLORS.white} />
-                  ) : (
-                    <Text style={styles.modalSaveButtonText}>Save Changes</Text>
-                  )}
-                </TouchableOpacity>
+                  loading={savingProfile}
+                  variant="primary"
+                  size="large"
+                  style={styles.modalButton}
+                />
               </View>
             </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Confirmation */}
       <ConfirmModal
         visible={logoutConfirmVisible}
         title="Logout"
@@ -422,371 +454,352 @@ export default function ProfileScreen({ navigation, route }) {
         cancelLabel="Cancel"
         confirmLabel="Logout"
       />
-
-      <View style={{ height: SPACING.xxl }} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surface.secondary,
   },
-  centerContainer: {
+
+  loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: SPACING.lg,
-    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface.secondary,
+    padding: SPACING.xl,
   },
-  headerBackground: {
-    height: 120,
-    backgroundColor: COLORS.primary,
-    marginBottom: -60,
+
+  loadingText: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.text.secondary,
+    marginTop: SPACING.md,
   },
+
+  scrollView: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingBottom: SPACING.xxl,
+  },
+
+  // Header
+  header: {
+    backgroundColor: COLORS.primary.main,
+    paddingTop: Platform.OS === 'ios' ? SPACING.huge : SPACING.xl,
+    paddingBottom: SPACING.xxl,
+  },
+
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.base,
+  },
+
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  backButtonText: {
+    fontSize: 24,
+    color: COLORS.white,
+  },
+
+  headerSpacer: {
+    width: 40,
+  },
+
+  // Profile Section
+  profileSection: {
+    marginTop: -SPACING.xxxl,
+    paddingHorizontal: SPACING.base,
+  },
+
   profileCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.md,
-    marginVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    alignItems: "center",
-    ...SHADOWS.medium,
-    zIndex: 10,
+    padding: SPACING.xl,
   },
-  avatarContainer: {
-    marginBottom: SPACING.md,
+
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
+
+  profileAvatar: {
+    marginBottom: SPACING.base,
     borderWidth: 4,
     borderColor: COLORS.white,
+    ...SHADOWS.md,
   },
-  avatarText: {
-    color: COLORS.white,
-    fontSize: 32,
-    fontWeight: "700",
+
+  profileInfo: {
+    alignItems: 'center',
   },
-  name: {
-    fontSize: SIZES.lg,
-    fontWeight: "700",
-    color: COLORS.text,
+
+  profileName: {
+    ...TYPOGRAPHY.styles.h3,
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
-  email: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
+
+  profileBio: {
+    ...TYPOGRAPHY.styles.bodySmall,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    marginTop: SPACING.sm,
+    lineHeight: 20,
+    paddingHorizontal: SPACING.base,
   },
-  statsContainer: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.md,
-    marginVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: SPACING.lg,
-    ...SHADOWS.small,
-  },
-  statItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statDivider: {
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: COLORS.border,
-  },
-  statNumber: {
-    fontSize: SIZES.lg,
-    fontWeight: "700",
-    color: COLORS.secondary,
-    marginBottom: SPACING.xs,
-  },
-  statLabel: {
-    fontSize: SIZES.xs,
-    color: COLORS.textSecondary,
-    fontWeight: "600",
-  },
-  section: {
-    marginHorizontal: SPACING.md,
-    marginVertical: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: SIZES.sm,
-    fontWeight: "700",
-    color: COLORS.secondary,
-    marginBottom: SPACING.md,
-    marginLeft: SPACING.sm,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  actionButton: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: SPACING.md,
-    ...SHADOWS.small,
-  },
-  actionButtonBorder: {
-    marginBottom: 0,
-  },
-  actionButtonIcon: {
-    fontSize: SIZES.xl,
-    marginRight: SPACING.md,
-  },
-  actionButtonContent: {
-    flex: 1,
-  },
-  actionButtonTitle: {
-    fontSize: SIZES.md,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  actionButtonDesc: {
-    fontSize: SIZES.xs,
-    color: COLORS.textSecondary,
+
+  campusIdBadge: {
+    backgroundColor: COLORS.primary.container,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.full,
     marginTop: SPACING.xs,
   },
-  actionButtonArrow: {
-    fontSize: SIZES.lg,
-    color: COLORS.secondary,
+
+  campusIdText: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.primary.main,
+    fontWeight: TYPOGRAPHY.weight.semiBold,
   },
-  infoBox: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    ...SHADOWS.small,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.secondary,
+
+  // Stats Row
+  statsRow: {
+    flexDirection: 'row',
+    paddingTop: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border.light,
   },
-  infoLabel: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
+
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  statBoxBorder: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: COLORS.border.light,
+  },
+
+  statNumber: {
+    ...TYPOGRAPHY.styles.h3,
+    color: COLORS.text.primary,
+    fontWeight: TYPOGRAPHY.weight.bold,
+  },
+
+  statIcon: {
+    fontSize: 24,
+    marginBottom: SPACING.xxs,
+  },
+
+  statLabel: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.text.secondary,
+    marginTop: SPACING.xxs,
+  },
+
+  // Profile Actions
+  profileActions: {
+    flexDirection: 'row',
+    marginTop: SPACING.lg,
+    gap: SPACING.sm,
+  },
+
+  editButton: {
+    flex: 1,
+  },
+
+  // Quick Actions
+  quickActions: {
+    marginTop: SPACING.base,
+    gap: SPACING.sm,
+  },
+
+  actionCard: {
+    marginBottom: 0,
+  },
+
+  actionCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  actionIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.primary.container,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.base,
+  },
+
+  actionIcon: {
+    fontSize: 24,
+  },
+
+  actionText: {
+    flex: 1,
+  },
+
+  actionTitle: {
+    ...TYPOGRAPHY.styles.label,
+    color: COLORS.text.primary,
+    fontWeight: TYPOGRAPHY.weight.semiBold,
+  },
+
+  actionDescription: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.text.secondary,
+    marginTop: SPACING.xxs,
+  },
+
+  // Items Section
+  itemsSection: {
+    marginTop: SPACING.xl,
+  },
+
+  sectionTitle: {
+    ...TYPOGRAPHY.styles.h4,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.base,
+  },
+
+  itemsRow: {
+    justifyContent: 'space-between',
     marginBottom: SPACING.sm,
   },
-  infoValue: {
-    fontSize: SIZES.md,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  settingItem: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    ...SHADOWS.small,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.secondary,
-  },
-  settingIcon: {
-    fontSize: SIZES.xl,
-    marginRight: SPACING.md,
-  },
-  settingText: {
-    flex: 1,
-    fontSize: SIZES.md,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  settingArrow: {
-    fontSize: SIZES.lg,
-    color: COLORS.secondary,
-  },
-  noUserText: {
-    fontSize: SIZES.md,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
-    textAlign: "center",
-  },
-  loginButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-  },
-  loginButtonText: {
-    color: COLORS.white,
-    fontSize: SIZES.md,
-    fontWeight: "600",
-  },
-  itemsGridRow: {
-    justifyContent: "space-between",
-    marginBottom: SPACING.md,
-    paddingHorizontal: SPACING.md,
-  },
+
   itemCard: {
-    width: "48%",
-    backgroundColor: COLORS.white,
+    width: '48%',
+    backgroundColor: COLORS.surface.primary,
     borderRadius: BORDER_RADIUS.lg,
-    overflow: "hidden",
-    ...SHADOWS.small,
+    overflow: 'hidden',
+    ...SHADOWS.sm,
   },
-  itemImageContainer: {
-    width: "100%",
-    height: 150,
-  },
+
   itemImage: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: 160,
+    backgroundColor: COLORS.surface.tertiary,
   },
-  placeholderImage: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.gray100,
+
+  itemPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  placeholderText: {
-    fontSize: SIZES.xl,
+
+  itemPlaceholderIcon: {
+    fontSize: 48,
   },
-  itemInfo: {
-    padding: SPACING.md,
-  },
-  itemTitle: {
-    fontSize: SIZES.sm,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  itemPrice: {
-    fontSize: SIZES.md,
-    fontWeight: "700",
-    color: COLORS.secondary,
-    marginBottom: SPACING.xs,
-  },
-  itemCategory: {
-    backgroundColor: COLORS.accent,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.full,
-    alignSelf: "flex-start",
-  },
-  itemCategoryText: {
-    fontSize: SIZES.xs,
-    color: COLORS.white,
-    fontWeight: "600",
-  },
-  emptyItemsContainer: {
-    padding: SPACING.lg,
-    alignItems: "center",
-  },
-  emptyItemsText: {
-    fontSize: SIZES.md,
-    color: COLORS.textSecondary,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    zIndex: 20,
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.full,
+
+  itemDetails: {
     padding: SPACING.sm,
-    ...SHADOWS.small,
   },
-  backButtonText: {
-    fontSize: SIZES.lg,
-    color: COLORS.primary,
-    fontWeight: '700',
+
+  itemTitle: {
+    ...TYPOGRAPHY.styles.label,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
+    minHeight: 36,
   },
+
+  itemPrice: {
+    ...TYPOGRAPHY.styles.h5,
+    color: COLORS.primary.main,
+    fontWeight: TYPOGRAPHY.weight.bold,
+    marginBottom: SPACING.xs,
+  },
+
+  itemCategoryBadge: {
+    backgroundColor: COLORS.surface.tertiary,
+    alignSelf: 'flex-start',
+    paddingVertical: SPACING.xxs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+
+  itemCategoryText: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.text.secondary,
+    fontSize: 10,
+  },
+
+  // Empty State
+  emptyIcon: {
+    fontSize: 64,
+  },
+
+  emptyListings: {
+    marginTop: SPACING.xl,
+  },
+
+  // Modal
   modalContainer: {
     flex: 1,
   },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: COLORS.surface.overlay,
     justifyContent: 'flex-end',
   },
+
   modalContent: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface.primary,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
-    maxHeight: '90%',
-    paddingBottom: SPACING.lg,
+    maxHeight: '85%',
   },
+
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.base,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.border.light,
   },
+
   modalTitle: {
-    fontSize: SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.text,
-    flex: 1,
-    textAlign: 'center',
+    ...TYPOGRAPHY.styles.h3,
+    color: COLORS.text.primary,
   },
-  modalCloseButton: {
-    fontSize: SIZES.xl,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
+
+  modalCloseIcon: {
+    fontSize: 24,
+    color: COLORS.text.tertiary,
   },
+
   modalBody: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    padding: SPACING.xl,
   },
-  inputGroup: {
-    marginBottom: SPACING.lg,
+
+  inputIcon: {
+    fontSize: 20,
   },
-  inputLabel: {
-    fontSize: SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    fontSize: SIZES.md,
-    color: COLORS.text,
-    fontFamily: 'Segoe UI',
-  },
-  modalFooter: {
+
+  modalActions: {
     flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    gap: SPACING.md,
+    padding: SPACING.xl,
+    paddingTop: SPACING.base,
+    gap: SPACING.sm,
   },
+
   modalButton: {
     flex: 1,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCancelButton: {
-    backgroundColor: COLORS.gray100,
-  },
-  modalCancelButtonText: {
-    color: COLORS.text,
-    fontWeight: '600',
-    fontSize: SIZES.md,
-  },
-  modalSaveButton: {
-    backgroundColor: COLORS.primary,
-  },
-  modalSaveButtonText: {
-    color: COLORS.white,
-    fontWeight: '700',
-    fontSize: SIZES.md,
-  },
-  settingItemBorder: {
-    marginTop: SPACING.md,
   },
 });

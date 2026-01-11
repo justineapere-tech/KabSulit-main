@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { supabase } from '../config/supabase';
 import { isValidCampusEmail, validateEmail, validatePassword } from '../utils/validation';
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from '../config/theme';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 export default function RegisterScreen({ navigation }) {
   const [fullName, setFullName] = useState('');
@@ -20,33 +21,69 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Validation errors
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    if (emailError) setEmailError('');
+  };
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    if (passwordError) setPasswordError('');
+  };
+
+  const handleConfirmPasswordChange = (text) => {
+    setConfirmPassword(text);
+    if (confirmPasswordError) setConfirmPasswordError('');
+  };
+
+  const validateForm = () => {
+    let isValid = true;
+
+    if (!fullName.trim()) {
+      Alert.alert('Missing Information', 'Please enter your full name');
+      return false;
+    }
+
+    if (!email.trim()) {
+      setEmailError('Email is required');
+      isValid = false;
+    } else if (!validateEmail(email)) {
+      setEmailError('Please enter a valid email address');
+      isValid = false;
+    } else if (!isValidCampusEmail(email)) {
+      setEmailError('Only @cvsu.edu.ph email addresses are allowed');
+      isValid = false;
+    }
+
+    if (!password) {
+      setPasswordError('Password is required');
+      isValid = false;
+    } else if (!validatePassword(password)) {
+      setPasswordError('Password must be at least 6 characters');
+      isValid = false;
+    }
+
+    if (!confirmPassword) {
+      setConfirmPasswordError('Please confirm your password');
+      isValid = false;
+    } else if (password !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match');
+      isValid = false;
+    }
+
+    return isValid;
+  };
 
   const handleRegister = async () => {
-    // Validation
-    if (!fullName || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-
-    if (!isValidCampusEmail(email)) {
-      Alert.alert('Error', 'Only campus email addresses are allowed for registration');
-      return;
-    }
-
-    if (!validatePassword(password)) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
@@ -55,7 +92,7 @@ export default function RegisterScreen({ navigation }) {
         password: password,
         options: {
           data: {
-            full_name: fullName,
+            full_name: fullName.trim(),
           },
         },
       });
@@ -63,17 +100,17 @@ export default function RegisterScreen({ navigation }) {
       if (error) throw error;
 
       Alert.alert(
-        'Success',
-        'Registration successful! Please check your email to verify your account.',
+        'Account Created! 🎉',
+        'Please check your email to verify your account before signing in.',
         [
           {
-            text: 'OK',
+            text: 'Got it',
             onPress: () => navigation.navigate('Login'),
           },
         ]
       );
     } catch (error) {
-      Alert.alert('Registration Error', error.message);
+      Alert.alert('Registration Failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -84,72 +121,113 @@ export default function RegisterScreen({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Campus email required</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Create Account</Text>
+          <View style={styles.headerSpacer} />
+        </View>
 
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#999"
+        {/* Form Section */}
+        <View style={styles.formSection}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Join KabSulit</Text>
+            <Text style={styles.subtitle}>
+              Connect with your campus community 🎓
+            </Text>
+          </View>
+
+          <View style={styles.formCard}>
+            {/* Full Name */}
+            <Input
+              label="Full Name"
               value={fullName}
               onChangeText={setFullName}
+              placeholder="Juan Dela Cruz"
               autoCapitalize="words"
+              leftIcon={<Text style={styles.inputIcon}>👤</Text>}
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Campus Email"
-              placeholderTextColor="#999"
+            {/* Email */}
+            <Input
+              label="Campus Email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={handleEmailChange}
+              placeholder="juan.delacruz@cvsu.edu.ph"
               keyboardType="email-address"
               autoCapitalize="none"
-              autoCorrect={false}
+              error={emailError}
+              helperText="Only @cvsu.edu.ph emails are accepted"
+              leftIcon={<Text style={styles.inputIcon}>✉️</Text>}
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Password (min. 6 characters)"
-              placeholderTextColor="#999"
+            {/* Password */}
+            <Input
+              label="Password"
               value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
+              onChangeText={handlePasswordChange}
+              placeholder="At least 6 characters"
+              secureTextEntry={!showPassword}
+              error={passwordError}
+              leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Text style={styles.inputIcon}>{showPassword ? '👁' : '👁‍🗨'}</Text>
+                </TouchableOpacity>
+              }
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password"
-              placeholderTextColor="#999"
+            {/* Confirm Password */}
+            <Input
+              label="Confirm Password"
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
+              onChangeText={handleConfirmPasswordChange}
+              placeholder="Re-enter your password"
+              secureTextEntry={!showConfirmPassword}
+              error={confirmPasswordError}
+              leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  <Text style={styles.inputIcon}>{showConfirmPassword ? '👁' : '👁‍🗨'}</Text>
+                </TouchableOpacity>
+              }
             />
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleRegister}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Register</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Login')}
-              style={styles.linkContainer}
-            >
-              <Text style={styles.linkText}>
-                Already have an account? <Text style={styles.linkBold}>Login</Text>
+            {/* Terms Notice */}
+            <View style={styles.termsNotice}>
+              <Text style={styles.termsText}>
+                By creating an account, you agree to our Terms of Service and Privacy Policy
               </Text>
-            </TouchableOpacity>
+            </View>
+
+            {/* Register Button */}
+            <Button
+              title="Create Account"
+              onPress={handleRegister}
+              loading={loading}
+              variant="primary"
+              size="large"
+              fullWidth
+              style={styles.registerButton}
+            />
+
+            {/* Login Link */}
+            <View style={styles.loginPrompt}>
+              <Text style={styles.loginText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.loginLink}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -160,64 +238,114 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.surface.secondary,
   },
+
   scrollContent: {
     flexGrow: 1,
   },
-  content: {
-    flex: 1,
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? SPACING.huge : SPACING.xl,
+    paddingHorizontal: SPACING.base,
+    paddingBottom: SPACING.base,
+    backgroundColor: COLORS.surface.primary,
+  },
+
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.surface.tertiary,
+    alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
   },
+
+  backIcon: {
+    fontSize: 24,
+    color: COLORS.text.primary,
+  },
+
+  headerTitle: {
+    ...TYPOGRAPHY.styles.h4,
+    color: COLORS.text.primary,
+  },
+
+  headerSpacer: {
+    width: 40,
+  },
+
+  // Form Section
+  formSection: {
+    flex: 1,
+    paddingHorizontal: SPACING.base,
+    paddingTop: SPACING.xl,
+  },
+
+  titleContainer: {
+    marginBottom: SPACING.xl,
+  },
+
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#333',
+    ...TYPOGRAPHY.styles.h1,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
   },
+
   subtitle: {
-    fontSize: 16,
+    ...TYPOGRAPHY.styles.bodyLarge,
+    color: COLORS.text.secondary,
+  },
+
+  formCard: {
+    backgroundColor: COLORS.surface.primary,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.xl,
+    ...SHADOWS.md,
+  },
+
+  inputIcon: {
+    fontSize: 20,
+  },
+
+  termsNotice: {
+    backgroundColor: COLORS.surface.tertiary,
+    borderRadius: BORDER_RADIUS.sm,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+
+  termsText: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.text.secondary,
     textAlign: 'center',
-    marginBottom: 40,
-    color: '#666',
+    lineHeight: TYPOGRAPHY.size.sm * 1.5,
   },
-  form: {
-    width: '100%',
+
+  registerButton: {
+    marginBottom: SPACING.base,
   },
-  input: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 15,
+
+  loginPrompt: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: SPACING.base,
+    paddingBottom: SPACING.xl,
   },
-  buttonDisabled: {
-    opacity: 0.6,
+
+  loginText: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.text.secondary,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  linkBold: {
-    fontWeight: '600',
-    color: '#007AFF',
+
+  loginLink: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.primary.main,
+    fontWeight: TYPOGRAPHY.weight.bold,
   },
 });

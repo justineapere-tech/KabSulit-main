@@ -2,7 +2,20 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from '../config/theme';
 
-export default function ConfirmModal({ visible, title, message, onCancel, onConfirm, cancelLabel = 'Cancel', confirmLabel = 'Confirm' }) {
+export default function ConfirmModal({
+  visible,
+  title,
+  message,
+  onCancel,
+  onConfirm,
+  cancelLabel = 'Cancel',
+  confirmLabel = 'Confirm',
+  cancelText,
+  confirmText,
+}) {
+  const cancelBtnLabel = cancelText || cancelLabel;
+  const confirmBtnLabel = confirmText || confirmLabel;
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
@@ -11,10 +24,10 @@ export default function ConfirmModal({ visible, title, message, onCancel, onConf
           <Text style={styles.message}>{message}</Text>
           <View style={styles.actions}>
             <TouchableOpacity style={[styles.btn, styles.cancel]} onPress={onCancel}>
-              <Text style={styles.cancelText}>{cancelLabel}</Text>
+              <Text style={styles.cancelText}>{cancelBtnLabel}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.btn, styles.confirm]} onPress={onConfirm}>
-              <Text style={styles.confirmText}>{confirmLabel}</Text>
+              <Text style={styles.confirmText}>{confirmBtnLabel}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -58,18 +71,18 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
   },
   cancel: {
-    backgroundColor: COLORS.gray100,
+    backgroundColor: COLORS.surface.tertiary,
   },
   confirm: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary.main,
     marginLeft: SPACING.sm,
   },
   cancelText: {
-    color: COLORS.text,
+    color: COLORS.text.primary,
     fontWeight: '600',
   },
   confirmText: {
-    color: COLORS.white,
+    color: COLORS.primary.onPrimary,
     fontWeight: '700',
   },
 });

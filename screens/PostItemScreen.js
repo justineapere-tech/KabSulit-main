@@ -2,21 +2,21 @@
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
   ScrollView,
   Image,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Modal,
-  FlatList,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../config/supabase";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from "../config/theme";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, LAYOUT } from "../config/theme";
+import Button from "../components/Button";
+import Input from "../components/Input";
+import Chip from "../components/Chip";
 
 const CATEGORIES = [
   "Books",
@@ -32,19 +32,17 @@ export default function PostItemScreen({ navigation }) {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("Books");
-const [likes, setLikes] = useState(0);
-const [comments, setComments] = useState([]);
-
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
-        "Permission needed",
-        "Sorry, we need camera roll permissions to upload images!"
+        "Permission Required",
+        "We need access to your photos to upload images"
       );
       return;
     }
@@ -93,12 +91,12 @@ const [comments, setComments] = useState([]);
 
   const handlePost = async () => {
     if (!title.trim()) {
-      Alert.alert("Error", "Please enter a title");
+      Alert.alert("Missing Information", "Please enter a title for your item");
       return;
     }
 
     if (!category) {
-      Alert.alert("Error", "Please select a category");
+      Alert.alert("Missing Information", "Please select a category");
       return;
     }
 
@@ -124,47 +122,21 @@ const [comments, setComments] = useState([]);
 
       if (error) throw error;
 
-      Alert.alert("Success", "Item posted successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            setTitle("");
-            setDescription("");
-            setPrice("");
-            setCategory("Books");
-            setImage(null);
-            navigation.goBack();
-          },
-        },
-      ]);
+      // Clear form fields
+      setTitle("");
+      setDescription("");
+      setPrice("");
+      setCategory("Books");
+      setImage(null);
+      
+      // Show success modal
+      setSuccessModalVisible(true);
     } catch (error) {
       Alert.alert("Error", error.message || "Failed to post item");
     } finally {
       setUploading(false);
     }
   };
-
-  const renderCategoryOption = ({ item }) => (
-    <TouchableOpacity
-      style={styles.categoryOption}
-      onPress={() => {
-        setCategory(item);
-        setShowCategoryModal(false);
-      }}
-    >
-      <Text
-        style={[
-          styles.categoryOptionText,
-          category === item && styles.categoryOptionSelected,
-        ]}
-      >
-        {item}
-      </Text>
-      {category === item && (
-        <Text style={styles.categoryCheckmark}>✓</Text>
-      )}
-    </TouchableOpacity>
-  );
 
   return (
     <KeyboardAvoidingView
@@ -173,143 +145,179 @@ const [comments, setComments] = useState([]);
     >
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Post Your Item</Text>
+          <Text style={styles.headerTitle}>List an Item</Text>
           <Text style={styles.headerSubtitle}>
-            Help your fellow students find what they need
+            Share what you're selling with the campus community
           </Text>
         </View>
 
-        {/* Image Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Item Photo</Text>
-          {image ? (
-            <View style={styles.imageContainer}>
-              <Image source={{ uri: image }} style={styles.image} />
+        <View style={styles.formCard}>
+          {/* Image Upload Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>📷 Item Photo</Text>
+            {image ? (
+              <View style={styles.imageContainer}>
+                <Image source={{ uri: image }} style={styles.uploadedImage} />
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  onPress={() => setImage(null)}
+                >
+                  <Text style={styles.removeImageText}>✕</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.changeImageButton}
+                  onPress={pickImage}
+                >
+                  <Text style={styles.changeImageText}>Change Photo</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
               <TouchableOpacity
-                style={styles.removeImageButton}
-                onPress={() => setImage(null)}
+                style={styles.uploadPlaceholder}
+                onPress={pickImage}
+                activeOpacity={0.7}
               >
-                <Text style={styles.removeImageText}>✕</Text>
+                <View style={styles.uploadIcon}>
+                  <Text style={styles.uploadIconText}>📸</Text>
+                </View>
+                <Text style={styles.uploadText}>Tap to upload photo</Text>
+                <Text style={styles.uploadHint}>Add a clear photo of your item</Text>
               </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.imagePlaceholder}
-              onPress={pickImage}
-            >
-              <Text style={styles.imagePlaceholderIcon}>📷</Text>
-              <Text style={styles.imagePlaceholderText}>
-                Tap to upload photo
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+            )}
+          </View>
 
-        {/* Title */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Title</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Physics Textbook"
-            placeholderTextColor={COLORS.textLight}
-            value={title}
-            onChangeText={setTitle}
-            maxLength={100}
-          />
-          <Text style={styles.charCount}>{title.length}/100</Text>
-        </View>
-
-        {/* Category */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Category</Text>
-          <TouchableOpacity
-            style={styles.categoryButton}
-            onPress={() => setShowCategoryModal(true)}
-          >
-            <Text style={styles.categoryButtonText}>{category}</Text>
-            <Text style={styles.categoryButtonArrow}>▼</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Price */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Price (PHP)</Text>
-          <View style={styles.priceContainer}>
-            <Text style={styles.currencySymbol}>₱</Text>
-            <TextInput
-              style={styles.priceInput}
-              placeholder="0.00"
-              placeholderTextColor={COLORS.textLight}
-              keyboardType="decimal-pad"
-              value={price}
-              onChangeText={setPrice}
+          {/* Title Input */}
+          <View style={styles.section}>
+            <Input
+              label="Title"
+              value={title}
+              onChangeText={setTitle}
+              placeholder="What are you selling?"
+              maxLength={100}
+              showCharacterCount
             />
-            <TouchableOpacity
-              onPress={() => setPrice("")}
-              style={styles.clearButton}
-            >
-              <Text style={styles.clearButtonText}>Free</Text>
-            </TouchableOpacity>
+          </View>
+
+          {/* Category Selection */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Category</Text>
+            <View style={styles.categoryGrid}>
+              {CATEGORIES.map((cat) => (
+                <Chip
+                  key={cat}
+                  label={cat}
+                  selected={category === cat}
+                  onPress={() => setCategory(cat)}
+                  size="medium"
+                  style={styles.categoryChip}
+                />
+              ))}
+            </View>
+          </View>
+
+          {/* Price Input */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Price</Text>
+            <View style={styles.priceRow}>
+              <View style={styles.priceInputContainer}>
+                <Text style={styles.currencySymbol}>₱</Text>
+                <Input
+                  value={price}
+                  onChangeText={setPrice}
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                  style={styles.priceInput}
+                  inputStyle={styles.priceInputText}
+                />
+              </View>
+              <Button
+                title="Free"
+                onPress={() => setPrice("")}
+                variant={!price ? "primary" : "outline"}
+                size="small"
+                style={styles.freeButton}
+              />
+            </View>
+            <Text style={styles.priceHint}>
+              Leave blank or tap "Free" for free items
+            </Text>
+          </View>
+
+          {/* Description Input */}
+          <View style={styles.section}>
+            <Input
+              label="Description (Optional)"
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Describe the condition, features, or any important details..."
+              multiline
+              numberOfLines={4}
+              maxLength={500}
+              showCharacterCount
+            />
+          </View>
+
+          {/* Submit Button */}
+          <Button
+            title={uploading ? "Posting..." : "Post Item"}
+            onPress={handlePost}
+            loading={uploading}
+            variant="primary"
+            size="large"
+            fullWidth
+            style={styles.submitButton}
+          />
+
+          {/* Tips Section */}
+          <View style={styles.tipsCard}>
+            <Text style={styles.tipsTitle}>💡 Tips for a Great Listing</Text>
+            <View style={styles.tipRow}>
+              <Text style={styles.tipBullet}>•</Text>
+              <Text style={styles.tipText}>Use clear, well-lit photos</Text>
+            </View>
+            <View style={styles.tipRow}>
+              <Text style={styles.tipBullet}>•</Text>
+              <Text style={styles.tipText}>Describe the condition honestly</Text>
+            </View>
+            <View style={styles.tipRow}>
+              <Text style={styles.tipBullet}>•</Text>
+              <Text style={styles.tipText}>Price competitively</Text>
+            </View>
           </View>
         </View>
-
-        {/* Description */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.descriptionInput]}
-            placeholder="Describe the condition, any defects, etc."
-            placeholderTextColor={COLORS.textLight}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            maxLength={500}
-          />
-          <Text style={styles.charCount}>{description.length}/500</Text>
-        </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity
-          style={[styles.submitButton, uploading && styles.submitButtonDisabled]}
-          onPress={handlePost}
-          disabled={uploading}
-        >
-          {uploading ? (
-            <ActivityIndicator size="small" color={COLORS.white} />
-          ) : (
-            <Text style={styles.submitButtonText}>Post Item</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={{ height: SPACING.xl }} />
       </ScrollView>
 
-      {/* Category Modal */}
+      {/* Success Modal */}
       <Modal
-        visible={showCategoryModal}
+        visible={successModalVisible}
         transparent
-        animationType="slide"
-        onRequestClose={() => setShowCategoryModal(false)}
+        animationType="fade"
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Category</Text>
-              <TouchableOpacity
-                onPress={() => setShowCategoryModal(false)}
-              >
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
+          <View style={styles.successModal}>
+            <View style={styles.successIconContainer}>
+              <Text style={styles.successIcon}>✓</Text>
             </View>
-            <FlatList
-              data={CATEGORIES}
-              renderItem={renderCategoryOption}
-              keyExtractor={(item) => item}
-              scrollEnabled={false}
+            <Text style={styles.successTitle}>Posted Successfully!</Text>
+            <Text style={styles.successMessage}>
+              Your item is now live on the marketplace
+            </Text>
+            <Button
+              title="View Feed"
+              onPress={() => {
+                setSuccessModalVisible(false);
+                navigation.goBack();
+              }}
+              variant="primary"
+              size="large"
+              fullWidth
+              style={styles.successButton}
             />
           </View>
         </View>
@@ -321,218 +329,282 @@ const [comments, setComments] = useState([]);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surface.secondary,
   },
+
   scrollView: {
     flex: 1,
-    padding: SPACING.lg,
   },
+
+  scrollContent: {
+    paddingBottom: 100,
+  },
+
+  // Header
   header: {
+    backgroundColor: COLORS.primary.main,
+    paddingTop: Platform.OS === 'ios' ? SPACING.huge : SPACING.xl,
+    paddingHorizontal: SPACING.base,
+    paddingBottom: SPACING.xl,
+  },
+
+  headerTitle: {
+    ...TYPOGRAPHY.styles.h2,
+    color: COLORS.white,
+    marginBottom: SPACING.xs,
+  },
+
+  headerSubtitle: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.secondary.lighter,
+  },
+
+  // Form Card
+  formCard: {
+    backgroundColor: COLORS.surface.primary,
+    marginTop: -SPACING.lg,
+    marginHorizontal: SPACING.base,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.xl,
+    ...SHADOWS.md,
+  },
+
+  section: {
     marginBottom: SPACING.xl,
   },
-  headerTitle: {
-    fontSize: SIZES.xl,
-    fontWeight: "700",
-    color: COLORS.primary,
-    marginBottom: SPACING.sm,
-  },
-  headerSubtitle: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  section: {
-    marginBottom: SPACING.lg,
-  },
+
   sectionLabel: {
-    fontSize: SIZES.md,
-    fontWeight: "600",
-    color: COLORS.text,
+    ...TYPOGRAPHY.styles.label,
+    color: COLORS.text.primary,
     marginBottom: SPACING.sm,
   },
-  input: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    fontSize: SIZES.md,
-    color: COLORS.text,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  descriptionInput: {
-    height: 120,
-    textAlignVertical: "top",
-    paddingTop: SPACING.md,
-  },
-  charCount: {
-    fontSize: SIZES.xs,
-    color: COLORS.textLight,
-    marginTop: SPACING.xs,
-    textAlign: "right",
-  },
-  categoryButton: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  categoryButtonText: {
-    fontSize: SIZES.md,
-    color: COLORS.text,
-    fontWeight: "500",
-  },
-  categoryButtonArrow: {
-    fontSize: SIZES.sm,
-    color: COLORS.primary,
-  },
-  imagePlaceholder: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.md,
+
+  // Image Upload
+  uploadPlaceholder: {
     borderWidth: 2,
-    borderColor: COLORS.primary,
-    borderStyle: "dashed",
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
+    borderColor: COLORS.primary.light,
+    borderStyle: 'dashed',
+    borderRadius: BORDER_RADIUS.lg,
+    paddingVertical: SPACING.xxxl,
+    alignItems: 'center',
+    backgroundColor: COLORS.primary.container,
   },
-  imagePlaceholderIcon: {
-    fontSize: 48,
-    marginBottom: SPACING.md,
+
+  uploadIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: BORDER_RADIUS.circle,
+    backgroundColor: COLORS.surface.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.base,
   },
-  imagePlaceholderText: {
-    fontSize: SIZES.md,
-    color: COLORS.primary,
-    fontWeight: "600",
+
+  uploadIconText: {
+    fontSize: 40,
   },
+
+  uploadText: {
+    ...TYPOGRAPHY.styles.h5,
+    color: COLORS.primary.main,
+    marginBottom: SPACING.xs,
+  },
+
+  uploadHint: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.text.secondary,
+  },
+
   imageContainer: {
-    position: "relative",
-    marginBottom: SPACING.md,
+    position: 'relative',
   },
-  image: {
-    width: "100%",
-    height: 200,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.gray200,
+
+  uploadedImage: {
+    width: '100%',
+    height: 240,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.surface.tertiary,
   },
+
   removeImageButton: {
-    position: "absolute",
-    top: SPACING.sm,
-    right: SPACING.sm,
-    backgroundColor: COLORS.danger,
+    position: 'absolute',
+    top: SPACING.md,
+    right: SPACING.md,
     width: 36,
     height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    ...SHADOWS.medium,
+    borderRadius: BORDER_RADIUS.circle,
+    backgroundColor: COLORS.semantic.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.md,
   },
+
   removeImageText: {
     color: COLORS.white,
-    fontSize: SIZES.lg,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: TYPOGRAPHY.weight.bold,
   },
-  priceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
+
+  changeImageButton: {
+    marginTop: SPACING.base,
+    backgroundColor: COLORS.surface.tertiary,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.base,
     borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
+    alignSelf: 'center',
   },
-  currencySymbol: {
-    fontSize: SIZES.lg,
-    fontWeight: "700",
-    color: COLORS.primary,
+
+  changeImageText: {
+    ...TYPOGRAPHY.styles.label,
+    color: COLORS.primary.main,
+  },
+
+  // Category Grid
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+
+  categoryChip: {
+    marginRight: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+
+  // Price
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+
+  priceInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface.primary,
+    borderWidth: 1,
+    borderColor: COLORS.border.main,
+    borderRadius: BORDER_RADIUS.md,
+    paddingLeft: SPACING.base,
     marginRight: SPACING.sm,
   },
+
+  currencySymbol: {
+    ...TYPOGRAPHY.styles.h4,
+    color: COLORS.primary.main,
+    fontWeight: TYPOGRAPHY.weight.bold,
+    marginRight: SPACING.xs,
+  },
+
   priceInput: {
     flex: 1,
-    paddingVertical: SPACING.md,
-    fontSize: SIZES.md,
-    color: COLORS.text,
+    marginBottom: 0,
   },
-  clearButton: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.gray100,
-    borderRadius: BORDER_RADIUS.sm,
+
+  priceInputText: {
+    ...TYPOGRAPHY.styles.h4,
   },
-  clearButtonText: {
-    fontSize: SIZES.xs,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+
+  freeButton: {
+    paddingHorizontal: SPACING.lg,
   },
+
+  priceHint: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.text.tertiary,
+    marginTop: SPACING.xs,
+  },
+
+  // Submit Button
   submitButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: SPACING.lg,
-    alignItems: "center",
-    marginTop: SPACING.xl,
-    ...SHADOWS.medium,
+    marginTop: SPACING.base,
+    marginBottom: SPACING.xl,
   },
-  submitButtonDisabled: {
-    opacity: 0.7,
+
+  // Tips Card
+  tipsCard: {
+    backgroundColor: COLORS.secondary.container,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.base,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.secondary.main,
   },
-  submitButtonText: {
-    color: COLORS.white,
-    fontSize: SIZES.md,
-    fontWeight: "700",
+
+  tipsTitle: {
+    ...TYPOGRAPHY.styles.label,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.sm,
   },
+
+  tipRow: {
+    flexDirection: 'row',
+    marginBottom: SPACING.xs,
+  },
+
+  tipBullet: {
+    ...TYPOGRAPHY.styles.bodySmall,
+    color: COLORS.secondary.main,
+    marginRight: SPACING.sm,
+    fontWeight: TYPOGRAPHY.weight.bold,
+  },
+
+  tipText: {
+    ...TYPOGRAPHY.styles.bodySmall,
+    color: COLORS.text.secondary,
+    flex: 1,
+  },
+
+  // Success Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
   },
-  modalContent: {
+
+  successModal: {
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: BORDER_RADIUS.xl,
-    borderTopRightRadius: BORDER_RADIUS.xl,
-    maxHeight: "80%",
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.xxl,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    ...SHADOWS.lg,
   },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+
+  successIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.primary.main,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
   },
-  modalTitle: {
-    fontSize: SIZES.lg,
-    fontWeight: "700",
-    color: COLORS.text,
+
+  successIcon: {
+    fontSize: 48,
+    color: COLORS.white,
+    fontWeight: '700',
   },
-  modalClose: {
-    fontSize: SIZES.lg,
-    color: COLORS.textSecondary,
+
+  successTitle: {
+    ...TYPOGRAPHY.styles.h3,
+    color: COLORS.text.primary,
+    fontWeight: TYPOGRAPHY.weight.bold,
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
   },
-  categoryOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray100,
+
+  successMessage: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    marginBottom: SPACING.xl,
+    lineHeight: 22,
   },
-  categoryOptionText: {
-    fontSize: SIZES.md,
-    color: COLORS.text,
-  },
-  categoryOptionSelected: {
-    fontWeight: "700",
-    color: COLORS.primary,
-  },
-  categoryCheckmark: {
-    fontSize: SIZES.lg,
-    color: COLORS.primary,
-    fontWeight: "700",
+
+  successButton: {
+    marginTop: SPACING.base,
   },
 });

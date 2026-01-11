@@ -13,6 +13,11 @@ import {
   Platform,
 } from 'react-native';
 import { supabase } from '../config/supabase';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from '../config/theme';
+import Card from '../components/Card';
+import Avatar from '../components/Avatar';
+import Button from '../components/Button';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function CommentsScreen({ navigation, route }) {
   const itemId = route?.params?.itemId;
@@ -188,14 +193,13 @@ export default function CommentsScreen({ navigation, route }) {
   };
 
   const renderComment = ({ item: comment }) => (
-    <View style={styles.commentItem}>
+    <Card variant="elevated" style={styles.commentCard}>
       <View style={styles.commentHeader}>
         <View style={styles.avatarAndName}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {comment.profiles?.full_name?.charAt(0).toUpperCase() || 'U'}
-            </Text>
-          </View>
+          <Avatar
+            name={comment.profiles?.full_name || 'Anonymous'}
+            size="sm"
+          />
           <View style={styles.nameAndRating}>
             <Text style={styles.commentAuthor}>
               {comment.profiles?.full_name || 'Anonymous'}
@@ -221,21 +225,34 @@ export default function CommentsScreen({ navigation, route }) {
       <Text style={styles.commentTime}>
         {new Date(comment.created_at).toLocaleDateString()}
       </Text>
-    </View>
+    </Card>
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.itemPreview}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Reviews & Comments</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      {/* Item Preview */}
+      <Card variant="elevated" style={styles.itemPreview}>
         <Text style={styles.itemTitle}>{item?.title}</Text>
         <Text style={styles.itemPrice}>
           ₱{item?.price ? parseFloat(item.price).toFixed(2) : 'Free'}
         </Text>
-      </View>
+      </Card>
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : (
         <FlatList
@@ -245,6 +262,7 @@ export default function CommentsScreen({ navigation, route }) {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>💬</Text>
               <Text style={styles.emptyText}>No comments yet</Text>
               <Text style={styles.emptySubtext}>Be the first to comment!</Text>
             </View>
@@ -252,12 +270,13 @@ export default function CommentsScreen({ navigation, route }) {
         />
       )}
 
+      {/* Input Section */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.inputContainer}
       >
         <View style={styles.ratingSelector}>
-          <Text style={styles.ratingLabel}>Rate this item:</Text>
+          <Text style={styles.ratingLabel}>Your Rating:</Text>
           <View style={styles.stars}>
             {[1, 2, 3, 4, 5].map((star) => (
               <TouchableOpacity
@@ -276,57 +295,35 @@ export default function CommentsScreen({ navigation, route }) {
         <View style={styles.commentInputWrapper}>
           <TextInput
             style={styles.commentInput}
-            placeholder="Add a comment..."
+            placeholder="Share your thoughts..."
+            placeholderTextColor={COLORS.textSecondary}
             value={commentText}
             onChangeText={setCommentText}
             multiline
             maxLength={500}
             editable={!commenting}
           />
-          <TouchableOpacity
-            style={[styles.submitButton, commenting && styles.submitButtonDisabled]}
+          <Button
+            title={commenting ? '' : '→'}
             onPress={handleAddComment}
-            disabled={commenting}
+            disabled={commenting || !commentText.trim()}
+            variant="primary"
+            style={styles.submitButton}
           >
-            {commenting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>Post</Text>
-            )}
-          </TouchableOpacity>
+            {commenting && <ActivityIndicator size="small" color={COLORS.white} />}
+          </Button>
         </View>
       </KeyboardAvoidingView>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
+      <ConfirmModal
         visible={deleteModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.deleteModal}>
-            <Text style={styles.modalTitle}>Delete Comment</Text>
-            <Text style={styles.modalMessage}>Are you sure you want to delete this comment?</Text>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setDeleteModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.deleteButton]}
-                onPress={performDeleteComment}
-              >
-                <Text style={styles.deleteButtonText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Delete Comment"
+        message="Are you sure you want to delete this comment?"
+        onConfirm={performDeleteComment}
+        onCancel={() => setDeleteModalVisible(false)}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+      />
     </View>
   );
 }
@@ -334,45 +331,48 @@ export default function CommentsScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.background,
   },
   header: {
+    backgroundColor: COLORS.primary,
+    paddingTop: Platform.OS === 'ios' ? 50 : SPACING.lg,
+    paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    justifyContent: 'space-between',
+    ...SHADOWS.sm,
   },
-  closeButton: {
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backIcon: {
     fontSize: 24,
-    color: '#007AFF',
-    fontWeight: '600',
+    color: COLORS.white,
+    fontWeight: '700',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    ...TYPOGRAPHY.styles.h5,
+    color: COLORS.white,
   },
   itemPreview: {
-    backgroundColor: 'white',
-    padding: 12,
-    marginBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    margin: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   itemTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 4,
+    ...TYPOGRAPHY.styles.h5,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
   itemPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#007AFF',
+    ...TYPOGRAPHY.styles.h4,
+    color: COLORS.secondary,
+    fontWeight: '700',
   },
   centerContainer: {
     flex: 1,
@@ -380,195 +380,123 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
-    paddingVertical: 8,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.lg,
   },
-  commentItem: {
-    backgroundColor: 'white',
-    marginVertical: 4,
-    marginHorizontal: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  commentCard: {
+    marginBottom: SPACING.md,
   },
   commentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
   },
   avatarAndName: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     flex: 1,
   },
-  avatar: {
-    width: 32,
-    height: 24,
-    borderRadius: 16,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  avatarText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
   nameAndRating: {
     flex: 1,
+    marginLeft: SPACING.sm,
   },
   commentAuthor: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
+    ...TYPOGRAPHY.styles.h5,
+    color: COLORS.text,
   },
   ratingDisplay: {
     flexDirection: 'row',
-    marginTop: 4,
+    marginTop: SPACING.xs,
   },
   ratingIcon: {
     fontSize: 12,
     marginRight: 2,
   },
   deleteIcon: {
-    fontSize: 18,
+    fontSize: 20,
+    color: COLORS.error,
   },
   commentText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-    marginBottom: 6,
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.text,
+    lineHeight: 22,
+    marginBottom: SPACING.sm,
   },
   commentTime: {
-    fontSize: 12,
-    color: '#888',
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: SPACING.xxxl,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: SPACING.lg,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#999',
-    marginBottom: 4,
+    ...TYPOGRAPHY.styles.h4,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#bbb',
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.textSecondary,
   },
   inputContainer: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+    borderTopColor: COLORS.border,
+    paddingBottom: Platform.OS === 'ios' ? SPACING.lg : SPACING.sm,
+    ...SHADOWS.sm,
   },
   ratingSelector: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: COLORS.border,
   },
   ratingLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 6,
-    fontWeight: '500',
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   stars: {
     flexDirection: 'row',
   },
   starButton: {
-    marginRight: 8,
+    marginRight: SPACING.sm,
   },
   starIcon: {
-    fontSize: 24,
+    fontSize: 28,
   },
   commentInputWrapper: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
     alignItems: 'flex-end',
   },
   commentInput: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.text,
     maxHeight: 100,
-    marginRight: 8,
+    marginRight: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   submitButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteModal: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
-    width: '80%',
-    maxWidth: 300,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 12,
-  },
-  modalMessage: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#e0e0e0',
-  },
-  cancelButtonText: {
-    color: '#333',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  deleteButton: {
-    backgroundColor: '#d32f2f',
-  },
-  deleteButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 14,
+    width: 48,
+    height: 48,
+    borderRadius: BORDER_RADIUS.full,
+    padding: 0,
   },
 });

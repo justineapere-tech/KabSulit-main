@@ -2,17 +2,17 @@
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   ScrollView,
 } from "react-native";
 import { supabase } from "../config/supabase";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from "../config/theme";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS, LAYOUT } from "../config/theme";
+import Button from "../components/Button";
+import Input from "../components/Input";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -22,7 +22,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert("Missing Information", "Please fill in all fields");
       return;
     }
 
@@ -35,7 +35,7 @@ export default function LoginScreen({ navigation }) {
 
       if (error) throw error;
     } catch (error) {
-      Alert.alert("Login Error", error.message);
+      Alert.alert("Login Failed", error.message);
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      Alert.alert("Error", "Please enter your email");
+      Alert.alert("Email Required", "Please enter your email address to reset your password");
       return;
     }
 
@@ -51,7 +51,7 @@ export default function LoginScreen({ navigation }) {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
       if (error) throw error;
-      Alert.alert("Success", "Password reset link sent to your email");
+      Alert.alert("Success", "Password reset link has been sent to your email");
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
@@ -67,99 +67,102 @@ export default function LoginScreen({ navigation }) {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logo}>🎓</Text>
-          </View>
-          <Text style={styles.appName}>KabSulit CvSU</Text>
-          <Text style={styles.appTagline}>Campus Marketplace</Text>
-        </View>
-
-        {/* Login Form */}
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Welcome Back</Text>
-          <Text style={styles.sectionSubtitle}>
-            Login to your account to continue
-          </Text>
-
-          {/* Email */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Email Address</Text>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputIcon}>📧</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="your.email@cvsu.edu.ph"
-                placeholderTextColor={COLORS.textLight}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-                editable={!loading}
-              />
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <View style={styles.brandContainer}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoIcon}>🎓</Text>
+            </View>
+            <Text style={styles.appTitle}>KabSulit</Text>
+            <Text style={styles.appSubtitle}>CvSU Campus Marketplace</Text>
+            <View style={styles.universityBadge}>
+              <Text style={styles.badgeText}>Cavite State University</Text>
             </View>
           </View>
+        </View>
 
-          {/* Password */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputIcon}>🔒</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor={COLORS.textLight}
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-                editable={!loading}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Text style={styles.passwordToggle}>
-                  {showPassword ? "👁" : "👁‍🗨"}
-                </Text>
+        {/* Form Section */}
+        <View style={styles.formSection}>
+          <View style={styles.formCard}>
+            <Text style={styles.welcomeTitle}>Welcome Back!</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Sign in to continue to your account
+            </Text>
+
+            {/* Email Input */}
+            <Input
+              label="Email Address"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="your.email@cvsu.edu.ph"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon={<Text style={styles.inputIcon}>✉️</Text>}
+            />
+
+            {/* Password Input */}
+            <Input
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter your password"
+              secureTextEntry={!showPassword}
+              leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Text style={styles.inputIcon}>{showPassword ? "👁" : "👁‍🗨"}</Text>
+                </TouchableOpacity>
+              }
+            />
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              onPress={handleForgotPassword}
+              disabled={loading}
+              style={styles.forgotPassword}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            {/* Login Button */}
+            <Button
+              title="Sign In"
+              onPress={handleLogin}
+              loading={loading}
+              variant="primary"
+              size="large"
+              fullWidth
+              style={styles.loginButton}
+            />
+
+            {/* Register Link */}
+            <View style={styles.registerPrompt}>
+              <Text style={styles.registerText}>New to KabSulit? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                <Text style={styles.registerLink}>Create Account</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Forgot Password */}
-          <TouchableOpacity onPress={handleForgotPassword} disabled={loading}>
-            <Text style={styles.forgotPasswordLink}>
-              Forgot your password?
-            </Text>
-          </TouchableOpacity>
-
-          {/* Login Button */}
-          <TouchableOpacity
-            style={[styles.loginButton, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
-            ) : (
-              <Text style={styles.loginButtonText}>Login</Text>
-            )}
-          </TouchableOpacity>
-
-          {/* Register Link */}
-          <View style={styles.registerSection}>
-            <Text style={styles.registerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-              <Text style={styles.registerLink}>Sign up</Text>
-            </TouchableOpacity>
+          {/* Demo Credentials Info */}
+          <View style={styles.demoCard}>
+            <View style={styles.demoHeader}>
+              <Text style={styles.demoIcon}>ℹ️</Text>
+              <Text style={styles.demoTitle}>Demo Account</Text>
+            </View>
+            <View style={styles.demoContent}>
+              <View style={styles.demoRow}>
+                <Text style={styles.demoLabel}>Email:</Text>
+                <Text style={styles.demoValue}>demo@cvsu.edu.ph</Text>
+              </View>
+              <View style={styles.demoRow}>
+                <Text style={styles.demoLabel}>Password:</Text>
+                <Text style={styles.demoValue}>demo1234</Text>
+              </View>
+            </View>
           </View>
-        </View>
-
-        {/* Demo Credentials */}
-        <View style={styles.demoSection}>
-          <Text style={styles.demoTitle}>Demo Account</Text>
-          <Text style={styles.demoText}>Email: demo@cvsu.edu.ph</Text>
-          <Text style={styles.demoText}>Password: demo1234</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -169,146 +172,180 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surface.secondary,
   },
+  
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: SPACING.xl,
   },
-  headerSection: {
-    backgroundColor: COLORS.primary,
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.xl,
-    alignItems: "center",
-    borderBottomLeftRadius: BORDER_RADIUS.xl,
-    borderBottomRightRadius: BORDER_RADIUS.xl,
+  
+  // Hero Section
+  heroSection: {
+    backgroundColor: COLORS.primary.main,
+    paddingTop: Platform.OS === 'ios' ? SPACING.huge + SPACING.xl : SPACING.huge,
+    paddingBottom: SPACING.xxxl,
+    borderBottomLeftRadius: BORDER_RADIUS.xxl,
+    borderBottomRightRadius: BORDER_RADIUS.xxl,
   },
-  logoContainer: {
-    width: 80,
-    height: 60,
-    borderRadius: 40,
+  
+  brandContainer: {
+    alignItems: 'center',
+  },
+  
+  logoCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: BORDER_RADIUS.circle,
     backgroundColor: COLORS.white,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: SPACING.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.base,
+    ...SHADOWS.lg,
   },
-  logo: {
-    fontSize: 48,
+  
+  logoIcon: {
+    fontSize: 56,
   },
-  appName: {
-    fontSize: SIZES.xl,
-    fontWeight: "700",
+  
+  appTitle: {
+    ...TYPOGRAPHY.styles.hero,
     color: COLORS.white,
     marginBottom: SPACING.xs,
   },
-  appTagline: {
-    fontSize: SIZES.sm,
-    color: COLORS.secondary,
-    fontWeight: "500",
-  },
-  formSection: {
-    marginHorizontal: SPACING.lg,
-    marginVertical: SPACING.xl,
-  },
-  sectionTitle: {
-    fontSize: SIZES.lg,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  sectionSubtitle: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
+  
+  appSubtitle: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.secondary.light,
     marginBottom: SPACING.lg,
   },
-  formGroup: {
-    marginBottom: SPACING.lg,
-  },
-  label: {
-    fontSize: SIZES.md,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.md,
+  
+  universityBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
-    ...SHADOWS.small,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  inputIcon: {
-    fontSize: SIZES.lg,
-    marginRight: SPACING.sm,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: SPACING.md,
-    fontSize: SIZES.md,
-    color: COLORS.text,
-  },
-  passwordToggle: {
-    fontSize: SIZES.lg,
-    marginLeft: SPACING.sm,
-  },
-  forgotPasswordLink: {
-    fontSize: SIZES.sm,
-    color: COLORS.primary,
-    fontWeight: "600",
-    marginBottom: SPACING.lg,
-  },
-  loginButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: SPACING.lg,
-    alignItems: "center",
-    marginBottom: SPACING.lg,
-    ...SHADOWS.medium,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  loginButtonText: {
+  
+  badgeText: {
+    ...TYPOGRAPHY.styles.caption,
     color: COLORS.white,
-    fontSize: SIZES.md,
-    fontWeight: "700",
+    fontWeight: TYPOGRAPHY.weight.semiBold,
+    letterSpacing: 0.5,
   },
-  registerSection: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+  
+  // Form Section
+  formSection: {
+    flex: 1,
+    marginTop: -SPACING.xl,
+    paddingHorizontal: SPACING.base,
   },
-  registerText: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  registerLink: {
-    fontSize: SIZES.sm,
-    color: COLORS.primary,
-    fontWeight: "700",
-  },
-  demoSection: {
-    marginHorizontal: SPACING.lg,
-    backgroundColor: COLORS.white,
+  
+  formCard: {
+    backgroundColor: COLORS.surface.primary,
     borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    marginTop: SPACING.xl,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.secondary,
+    padding: SPACING.xl,
+    ...SHADOWS.md,
   },
-  demoTitle: {
-    fontSize: SIZES.md,
-    fontWeight: "700",
-    color: COLORS.primary,
+  
+  welcomeTitle: {
+    ...TYPOGRAPHY.styles.h2,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
+  },
+  
+  welcomeSubtitle: {
+    ...TYPOGRAPHY.styles.bodySmall,
+    color: COLORS.text.secondary,
+    marginBottom: SPACING.xl,
+  },
+  
+  inputIcon: {
+    fontSize: 20,
+  },
+  
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: SPACING.lg,
+  },
+  
+  forgotPasswordText: {
+    ...TYPOGRAPHY.styles.bodySmall,
+    color: COLORS.primary.main,
+    fontWeight: TYPOGRAPHY.weight.semiBold,
+  },
+  
+  loginButton: {
+    marginBottom: SPACING.base,
+  },
+  
+  registerPrompt: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: SPACING.base,
+  },
+  
+  registerText: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.text.secondary,
+  },
+  
+  registerLink: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.primary.main,
+    fontWeight: TYPOGRAPHY.weight.bold,
+  },
+  
+  // Demo Card
+  demoCard: {
+    backgroundColor: COLORS.secondary.container,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.base,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.xl,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.secondary.main,
+  },
+  
+  demoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: SPACING.sm,
   },
-  demoText: {
-    fontSize: SIZES.sm,
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-    fontFamily: "monospace",
+  
+  demoIcon: {
+    fontSize: 18,
+    marginRight: SPACING.xs,
+  },
+  
+  demoTitle: {
+    ...TYPOGRAPHY.styles.label,
+    color: COLORS.text.primary,
+    fontWeight: TYPOGRAPHY.weight.bold,
+  },
+  
+  demoContent: {
+    marginLeft: SPACING.xl,
+  },
+  
+  demoRow: {
+    flexDirection: 'row',
+    marginBottom: SPACING.xxs,
+  },
+  
+  demoLabel: {
+    ...TYPOGRAPHY.styles.bodySmall,
+    color: COLORS.text.secondary,
+    width: 80,
+    fontWeight: TYPOGRAPHY.weight.medium,
+  },
+  
+  demoValue: {
+    ...TYPOGRAPHY.styles.bodySmall,
+    color: COLORS.text.primary,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: TYPOGRAPHY.weight.semiBold,
   },
 });

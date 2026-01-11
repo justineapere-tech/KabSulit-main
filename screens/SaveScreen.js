@@ -16,7 +16,7 @@ import {
   Platform,
 } from "react-native";
 import { supabase } from "../config/supabase";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from "../config/theme";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from "../config/theme";
 import ConfirmModal from "../components/ConfirmModal";
 
 export default function SaveScreen({ navigation }) {
@@ -359,6 +359,7 @@ export default function SaveScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Collections</Text>
+        <Text style={styles.headerSubtitle}>Saved items and favorites</Text>
       </View>
 
       {/* Collections List (Horizontal Scroll) */}
@@ -449,7 +450,7 @@ export default function SaveScreen({ navigation }) {
       {/* Content */}
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={COLORS.primary.main} />
         </View>
       ) : displayItems.length > 0 ? (
         <FlatList
@@ -550,15 +551,21 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   header: {
-    backgroundColor: COLORS.primary,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
+    backgroundColor: COLORS.primary.main,
+    paddingTop: Platform.OS === 'ios' ? SPACING.huge : SPACING.xl,
+    paddingBottom: SPACING.xl,
+    paddingHorizontal: SPACING.base,
+    ...SHADOWS.sm,
   },
   headerTitle: {
-    fontSize: SIZES.xl,
-    fontWeight: "700",
-    color: COLORS.white,
+    ...TYPOGRAPHY.styles.h2,
+    color: COLORS.primary.onPrimary,
+    marginBottom: SPACING.xs,
+  },
+  headerSubtitle: {
+    ...TYPOGRAPHY.styles.bodySmall,
+    color: COLORS.primary.onPrimary,
+    opacity: 0.9,
   },
   collectionsHeader: {
     flexDirection: "row",
@@ -571,18 +578,18 @@ const styles = StyleSheet.create({
   collectionsLabel: {
     fontSize: SIZES.sm,
     fontWeight: "700",
-    color: COLORS.secondary,
+    color: COLORS.text.secondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   addCollectionButton: {
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.primary.main,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.md,
   },
   addCollectionButtonText: {
-    color: COLORS.text,
+    color: COLORS.primary.onPrimary,
     fontWeight: "700",
     fontSize: SIZES.sm,
   },

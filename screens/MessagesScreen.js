@@ -10,11 +10,13 @@ import {
   RefreshControl,
   Image,
   Animated,
+  Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../config/supabase";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from "../config/theme";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from "../config/theme";
 import ConfirmModal from "../components/ConfirmModal";
+import Avatar from "../components/Avatar";
 
 export default function MessagesScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -290,133 +292,196 @@ export default function MessagesScreen({ navigation }) {
 
   const renderConversationItem = (item, tab) => (
     <TouchableOpacity
-      style={styles.conversationItem}
+      style={styles.conversationCard}
       onPress={() =>
         navigation.navigate("Chat", {
           otherUserId: item.user_id,
           otherUserName: item.profile?.full_name || item.profile?.email || "User",
         })
       }
-      activeOpacity={0.7}
+      activeOpacity={0.6}
     >
-      {/* Avatar with Online Indicator */}
-      <View style={styles.avatarWrapper}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {item.profile?.full_name
-              ? item.profile.full_name.charAt(0).toUpperCase()
-              : (item.profile?.email || "U").charAt(0).toUpperCase()}
-          </Text>
-        </View>
-        <View style={[styles.onlineIndicator, styles.onlineIndicatorActive]} />
-      </View>
+      <View style={styles.conversationMain}>
+        <View style={styles.conversationContent}>
+          {/* Avatar with status */}
+          <View style={styles.avatarContainer}>
+            <Avatar
+              name={item.profile?.full_name || item.profile?.email || "User"}
+              size="lg"
+            />
+            {item.unreadCount > 0 && (
+              <View style={styles.avatarBadge}>
+                <Text style={styles.avatarBadgeText}>{item.unreadCount > 9 ? '9+' : item.unreadCount}</Text>
+              </View>
+            )}
+          </View>
 
-      {/* Message Content */}
-      <View style={styles.contentWrapper}>
-        <View style={styles.header}>
-          <Text style={styles.userName} numberOfLines={1}>
-            {item.profile?.full_name || item.profile?.email || "User"}
-          </Text>
-          <Text style={styles.timestamp}>{formatTime(item.lastMessage.created_at)}</Text>
-        </View>
-        <View style={styles.messagePreview}>
-          <Text
-            style={[
-              styles.previewText,
-              item.unreadCount > 0 && styles.unreadPreviewText,
-            ]}
-            numberOfLines={1}
-          >
-            {item.lastMessage.content}
-          </Text>
-          {item.unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+          {/* Message Content */}
+          <View style={styles.messageContent}>
+            <View style={styles.messageHeader}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {item.profile?.full_name || item.profile?.email || "User"}
+              </Text>
+              <View style={styles.metaInfo}>
+                <Text style={styles.timestamp}>
+                  {formatTime(item.lastMessage.created_at)}
+                </Text>
+              </View>
             </View>
-          )}
+            
+            <View style={styles.messageRow}>
+              <Text
+                style={[
+                  styles.messagePreview,
+                  item.unreadCount > 0 && styles.messagePreviewUnread,
+                ]}
+                numberOfLines={2}
+              >
+                {item.lastMessage.content}
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
 
-      {/* Action Button */}
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => 
-          tab === "archived" 
-            ? unarchiveConversation(item.user_id)
-            : handleDeleteConversation(item.user_id)
-        }
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={styles.deleteIcon}>{tab === "archived" ? "📥" : "🗑️"}</Text>
-      </TouchableOpacity>
+        {/* Action Button - Swipe-like action */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            tab === "archived" 
+              ? unarchiveConversation(item.user_id)
+              : handleDeleteConversation(item.user_id);
+          }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.actionIconContainer, tab === "archived" && styles.actionIconContainerRestore]}>
+            <Text style={styles.actionIcon}>{tab === "archived" ? "📥" : "🗑️"}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary.main} />
+        <Text style={styles.loadingText}>Loading conversations...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Messages</Text>
-          <Text style={styles.headerSubtitle}>
-            {activeTab === "active" ? conversations.length : archivedConversations.length} {activeTab === "active" ? "conversation" : "archived"}
-          </Text>
+      {/* Modern Header with Gradient-like Effect */}
+      <View style={styles.headerWrapper}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.headerTitle}>💬 Messages</Text>
+              <Text style={styles.headerSubtitle}>
+                {activeTab === "active" 
+                  ? `${conversations.length} active conversation${conversations.length !== 1 ? 's' : ''}`
+                  : `${archivedConversations.length} archived`}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Modern Tab Selector - Integrated into header */}
+        <View style={styles.tabWrapper}>
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === "active" && styles.tabActive]}
+              onPress={() => setActiveTab("active")}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.tabContent, activeTab === "active" && styles.tabContentActive]}>
+                <Text style={[styles.tabIcon, activeTab === "active" && styles.tabIconActive]}>
+                  💬
+                </Text>
+                <Text style={[styles.tabText, activeTab === "active" && styles.tabTextActive]}>
+                  Active
+                </Text>
+                {conversations.length > 0 && (
+                  <View style={[styles.tabBadge, activeTab === "active" && styles.tabBadgeActive]}>
+                    <Text style={[styles.tabBadgeText, activeTab === "active" && styles.tabBadgeTextActive]}>
+                      {conversations.length}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.tab, activeTab === "archived" && styles.tabActive]}
+              onPress={() => setActiveTab("archived")}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.tabContent, activeTab === "archived" && styles.tabContentActive]}>
+                <Text style={[styles.tabIcon, activeTab === "archived" && styles.tabIconActive]}>
+                  📦
+                </Text>
+                <Text style={[styles.tabText, activeTab === "archived" && styles.tabTextActive]}>
+                  Archived
+                </Text>
+                {archivedConversations.length > 0 && (
+                  <View style={[styles.tabBadge, activeTab === "archived" && styles.tabBadgeActive]}>
+                    <Text style={[styles.tabBadgeText, activeTab === "archived" && styles.tabBadgeTextActive]}>
+                      {archivedConversations.length}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
-      {/* Tab Selector */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "active" && styles.tabActive]}
-          onPress={() => setActiveTab("active")}
-        >
-          <Text style={[styles.tabText, activeTab === "active" && styles.tabTextActive]}>
-            Active {conversations.length > 0 && `(${conversations.length})`}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "archived" && styles.tabActive]}
-          onPress={() => setActiveTab("archived")}
-        >
-          <Text style={[styles.tabText, activeTab === "archived" && styles.tabTextActive]}>
-            Archived {archivedConversations.length > 0 && `(${archivedConversations.length})`}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Conversations List */}
+      {/* Conversations List with Enhanced Styling */}
       <FlatList
         data={activeTab === "active" ? conversations : archivedConversations}
         keyExtractor={(item) => item.user_id}
         renderItem={({ item }) => renderConversationItem(item, activeTab)}
-        contentContainerStyle={(activeTab === "active" ? conversations.length : archivedConversations.length) === 0 ? { flex: 1 } : undefined}
+        contentContainerStyle={[
+          styles.listContainer,
+          (activeTab === "active" ? conversations.length : archivedConversations.length) === 0 && styles.listContainerEmpty
+        ]}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
+            tintColor={COLORS.primary.main}
+            colors={[COLORS.primary.main]}
           />
         }
         ListEmptyComponent={
           loading ? null : (
-            <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>💬</Text>
-              <Text style={styles.emptyText}>
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <Text style={styles.emptyIcon}>
+                  {activeTab === "active" ? "💬" : "📦"}
+                </Text>
+              </View>
+              <Text style={styles.emptyTitle}>
                 {activeTab === "active" ? "No messages yet" : "No archived conversations"}
               </Text>
-              <Text style={styles.emptySubtext}>
+              <Text style={styles.emptyText}>
                 {activeTab === "active" 
-                  ? "Start a conversation by messaging a seller" 
-                  : "Archived conversations will appear here"}
+                  ? "Start chatting with sellers and buyers\nfrom the marketplace" 
+                  : "Conversations you archive will\nappear here for later"}
               </Text>
+              {activeTab === "active" && (
+                <TouchableOpacity 
+                  style={styles.emptyButton}
+                  onPress={() => navigation.navigate("Feed")}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.emptyButtonText}>Browse Marketplace</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )
         }
@@ -424,11 +489,11 @@ export default function MessagesScreen({ navigation }) {
 
       <ConfirmModal
         visible={deleteModalVisible}
-        title="Delete Conversation"
-        message={`Are you sure you want to delete this conversation? This cannot be undone.`}
+        title="Archive Conversation"
+        message="Archive this conversation? You can restore it anytime from the Archived tab."
         onConfirm={deleteConversation}
         onCancel={() => setDeleteModalVisible(false)}
-        confirmText="Delete"
+        confirmText="Archive"
         cancelText="Cancel"
       />
     </View>
@@ -438,174 +503,318 @@ export default function MessagesScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surface.secondary,
   },
+
+  // Loading State
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface.secondary,
+  },
+
+  loadingText: {
+    marginTop: SPACING.md,
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.text.secondary,
+  },
+
+  // Header - Modern Design
+  headerWrapper: {
+    backgroundColor: COLORS.primary.main,
+    paddingBottom: 0,
+  },
+
   header: {
-    backgroundColor: COLORS.white,
+    paddingTop: Platform.OS === 'ios' ? SPACING.huge + SPACING.md : SPACING.xl,
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
     paddingBottom: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
+
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+
   headerTitle: {
-    fontSize: SIZES.xl,
-    fontWeight: "700",
-    color: COLORS.text,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
     marginBottom: SPACING.xs,
+    letterSpacing: -0.5,
   },
+
   headerSubtitle: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    fontSize: 15,
+    color: '#FFF176',
+    fontWeight: '600',
+    opacity: 0.95,
   },
+
+  // Modern Tab Design
+  tabWrapper: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.sm,
+  },
+
   tabContainer: {
-    flexDirection: "row",
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.xxs,
+    gap: SPACING.xxs,
   },
+
   tab: {
     flex: 1,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    borderBottomWidth: 3,
-    borderBottomColor: "transparent",
   },
-  tabActive: {
-    borderBottomColor: COLORS.primary,
+
+  tabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    gap: SPACING.xs,
   },
+
+  tabContentActive: {
+    backgroundColor: '#FFFFFF',
+  },
+
+  tabIcon: {
+    fontSize: 18,
+    opacity: 0.7,
+  },
+
+  tabIconActive: {
+    opacity: 1,
+  },
+
   tabText: {
-    fontSize: SIZES.md,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    opacity: 0.8,
   },
+
   tabTextActive: {
-    color: COLORS.primary,
+    color: COLORS.primary.main,
+    opacity: 1,
+    fontWeight: '700',
   },
-  conversationItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+
+  tabBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: BORDER_RADIUS.full,
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: SPACING.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  avatarWrapper: {
-    position: "relative",
+
+  tabBadgeActive: {
+    backgroundColor: COLORS.primary.main,
+  },
+
+  tabBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  tabBadgeTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // List Container
+  listContainer: {
+    paddingTop: SPACING.sm,
+  },
+
+  listContainerEmpty: {
+    flexGrow: 1,
+  },
+
+  // Conversation Card - Modern Design
+  conversationCard: {
+    backgroundColor: COLORS.surface.primary,
+    marginHorizontal: SPACING.base,
+    marginBottom: SPACING.sm,
+    borderRadius: BORDER_RADIUS.lg,
+    overflow: 'hidden',
+    ...SHADOWS.md,
+  },
+
+  conversationMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  conversationContent: {
+    flex: 1,
+    flexDirection: 'row',
+    padding: SPACING.base,
+    alignItems: 'flex-start',
+    paddingRight: SPACING.xs,
+  },
+
+  avatarContainer: {
+    position: 'relative',
     marginRight: SPACING.md,
   },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    ...SHADOWS.small,
-  },
-  avatarText: {
-    color: COLORS.white,
-    fontSize: SIZES.lg,
-    fontWeight: "700",
-  },
-  onlineIndicator: {
-    position: "absolute",
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    bottom: 0,
-    right: 0,
-    borderWidth: 3,
-    borderColor: COLORS.white,
-  },
-  onlineIndicatorActive: {
-    backgroundColor: "#31a24c",
-  },
-  contentWrapper: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: SPACING.xs,
-  },
-  userName: {
-    fontSize: SIZES.md,
-    fontWeight: "700",
-    color: COLORS.text,
-    flex: 1,
-  },
-  timestamp: {
-    fontSize: SIZES.xs,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
-    marginLeft: SPACING.sm,
-  },
-  messagePreview: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  previewText: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-    flex: 1,
-    fontWeight: "400",
-  },
-  unreadPreviewText: {
-    color: COLORS.text,
-    fontWeight: "600",
-  },
-  unreadBadge: {
-    backgroundColor: COLORS.primary,
+
+  avatarBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: COLORS.primary.main,
     borderRadius: BORDER_RADIUS.full,
     minWidth: 24,
     height: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.surface.primary,
+    ...SHADOWS.sm,
   },
-  unreadCount: {
-    color: COLORS.white,
-    fontSize: SIZES.xs,
-    fontWeight: "700",
+
+  avatarBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
-  deleteButton: {
-    paddingLeft: SPACING.lg,
-    paddingVertical: SPACING.md,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  deleteIcon: {
-    fontSize: SIZES.lg,
-    color: COLORS.error,
-    fontWeight: "700",
-  },
-  empty: {
+
+  messageContent: {
     flex: 1,
-    padding: SPACING.xl,
-    alignItems: "center",
-    justifyContent: "center",
+    justifyContent: 'center',
   },
+
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
+
+  userName: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+    marginRight: SPACING.sm,
+  },
+
+  metaInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+
+  timestamp: {
+    fontSize: 13,
+    color: COLORS.text.tertiary,
+    fontWeight: '500',
+  },
+
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  messagePreview: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 20,
+    color: COLORS.text.secondary,
+    fontWeight: '400',
+  },
+
+  messagePreviewUnread: {
+    color: COLORS.text.primary,
+    fontWeight: '600',
+  },
+
+  actionButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.base,
+  },
+
+  actionIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.surface.tertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  actionIconContainerRestore: {
+    backgroundColor: COLORS.primary.container,
+  },
+
+  actionIcon: {
+    fontSize: 22,
+  },
+
+  // Empty State - Enhanced
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.huge,
+  },
+
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: BORDER_RADIUS.circle,
+    backgroundColor: COLORS.primary.container,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.xl,
+  },
+
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: SPACING.lg,
+    fontSize: 56,
   },
-  emptyText: {
-    color: COLORS.text,
-    fontSize: SIZES.lg,
-    fontWeight: "600",
+
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.text.primary,
     marginBottom: SPACING.sm,
+    textAlign: 'center',
   },
-  emptySubtext: {
-    color: COLORS.textSecondary,
-    fontSize: SIZES.sm,
-    textAlign: "center",
+
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: SPACING.xl,
+  },
+
+  emptyButton: {
+    backgroundColor: COLORS.primary.main,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xxl,
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.md,
+  },
+
+  emptyButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

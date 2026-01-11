@@ -11,9 +11,13 @@ import {
   Platform,
 } from 'react-native';
 import { supabase } from '../config/supabase';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../config/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, SIZES } from '../config/theme';
 import ConfirmModal from '../components/ConfirmModal';
 import SaveToCollectionsModal from '../components/SaveToCollectionsModal';
+import Card from '../components/Card';
+import Avatar from '../components/Avatar';
+import Button from '../components/Button';
+import Chip from '../components/Chip';
 
 export default function ItemDetailScreen({ route, navigation }) {
   const params = route.params || {};
@@ -146,19 +150,25 @@ export default function ItemDetailScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading item...</Text>
       </View>
     );
   }
 
   if (!item) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.placeholderText}>Item not found</Text>
-        <TouchableOpacity style={{marginTop:16}} onPress={() => navigation.goBack()}>
-          <Text style={{color:'#007AFF'}}>Go back</Text>
-        </TouchableOpacity>
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyIcon}>📦</Text>
+        <Text style={styles.emptyTitle}>Item Not Found</Text>
+        <Text style={styles.emptyDesc}>This item may have been removed or doesn't exist.</Text>
+        <Button
+          title="Go Back"
+          onPress={() => navigation.goBack()}
+          variant="primary"
+          style={{ marginTop: SPACING.lg }}
+        />
       </View>
     );
   }
@@ -166,75 +176,131 @@ export default function ItemDetailScreen({ route, navigation }) {
   const isOwner = currentUser && currentUser.id === item.user_id;
 
   return (
-    <ScrollView style={styles.container}>
-      {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.image} />
-      ) : (
-        <View style={[styles.image, styles.placeholderImage]}>
-          <Text style={styles.placeholderText}>No Image</Text>
-        </View>
-      )}
-
-      <View style={styles.content}>
-        <Text style={styles.title}>{item?.title || 'Untitled'}</Text>
-        <Text style={styles.price}>
-          {item?.price ? `$${parseFloat(item.price).toFixed(2)}` : 'Free'}
-        </Text>
-
-        {item?.description && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>{item.description}</Text>
-          </View>
-        )}
-
-        {item?.category && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Category</Text>
-            <Text style={styles.category}>{item.category}</Text>
-          </View>
-        )}
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Seller</Text>
-          <Text style={styles.sellerName}>
-            {seller?.full_name || seller?.email || 'Unknown'}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Status</Text>
-          <Text style={[styles.status, item?.status === 'available' && styles.statusAvailable]}>
-            {item?.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Unknown'}
-          </Text>
-        </View>
-
-        {!isOwner && (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
-              onPress={() => setSaveModalVisible(true)}
-            >
-              <Text style={styles.buttonText}>💾 Save Item</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.messageButton]}
-              onPress={() => navigation.navigate('Chat', {
-                otherUserId: item.user_id,
-                otherUserName: seller?.full_name || 'Seller',
-              })}
-            >
-              <Text style={styles.buttonText}>Message Seller</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {isOwner && (
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-            <Text style={styles.deleteButtonText}>Delete Item</Text>
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Hero Image */}
+        <View style={styles.imageContainer}>
+          {item.image_url ? (
+            <Image source={{ uri: item.image_url }} style={styles.image} />
+          ) : (
+            <View style={[styles.image, styles.placeholderImage]}>
+              <Text style={styles.placeholderIcon}>📷</Text>
+              <Text style={styles.placeholderText}>No Image</Text>
+            </View>
+          )}
+          
+          {/* Back Button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-        )}
-      </View>
+
+          {/* Status Badge */}
+          {item?.status && (
+            <View style={[
+              styles.statusBadge,
+              item.status === 'available' && styles.statusAvailableBadge,
+              item.status === 'sold' && styles.statusSoldBadge
+            ]}>
+              <Text style={styles.statusBadgeText}>
+                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Price & Category Section */}
+          <Card variant="elevated" style={styles.priceCard}>
+            <View style={styles.priceRow}>
+              <View style={styles.priceInfo}>
+                <Text style={styles.priceLabel}>Price</Text>
+                <Text style={styles.price}>
+                  {item?.price ? `₱${parseFloat(item.price).toFixed(2)}` : 'Free'}
+                </Text>
+              </View>
+              {item?.category && (
+                <Chip
+                  label={item.category}
+                  selected={false}
+                  variant="default"
+                  size="medium"
+                />
+              )}
+            </View>
+          </Card>
+
+          {/* Title & Description */}
+          <Card variant="elevated" style={styles.infoCard}>
+            <Text style={styles.title}>{item?.title || 'Untitled'}</Text>
+            
+            {item?.description && (
+              <View style={styles.descriptionSection}>
+                <Text style={styles.sectionLabel}>Description</Text>
+                <Text style={styles.description}>{item.description}</Text>
+              </View>
+            )}
+          </Card>
+
+          {/* Seller Info */}
+          <Card variant="elevated" style={styles.sellerCard}>
+            <Text style={styles.sectionLabel}>Seller Information</Text>
+            <View style={styles.sellerRow}>
+              <Avatar
+                imageUri={seller?.avatar_url}
+                name={seller?.full_name || seller?.email || 'U'}
+                size="lg"
+              />
+              <View style={styles.sellerInfo}>
+                <Text style={styles.sellerName}>
+                  {seller?.full_name || 'Unknown Seller'}
+                </Text>
+                <Text style={styles.sellerEmail}>
+                  {seller?.email || ''}
+                </Text>
+              </View>
+            </View>
+          </Card>
+
+          {/* Action Buttons */}
+          {!isOwner && (
+            <View style={styles.actionButtons}>
+              <Button
+                title="💬 Message Seller"
+                onPress={() => navigation.navigate('Chat', {
+                  otherUserId: item.user_id,
+                  otherUserName: seller?.full_name || 'Seller',
+                })}
+                variant="primary"
+                fullWidth
+                style={{ marginBottom: SPACING.sm }}
+              />
+              <Button
+                title="💾 Save to Collection"
+                onPress={() => setSaveModalVisible(true)}
+                variant="outline"
+                fullWidth
+              />
+            </View>
+          )}
+
+          {isOwner && (
+            <View style={styles.ownerActions}>
+              <Text style={styles.ownerBadge}>👤 You own this item</Text>
+              <Button
+                title="🗑️ Delete Item"
+                onPress={handleDelete}
+                variant="danger"
+                fullWidth
+              />
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
       <ConfirmModal
         visible={confirmVisible}
         title={confirmPayload?.type === 'delete' ? 'Delete Item' : ''}
@@ -253,106 +319,197 @@ export default function ItemDetailScreen({ route, navigation }) {
           // Optional: Show feedback
         }}
       />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
   },
-  centerContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.md,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xl,
+    backgroundColor: COLORS.background,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: SPACING.lg,
+  },
+  emptyTitle: {
+    ...TYPOGRAPHY.styles.h2,
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+  },
+  emptyDesc: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 400,
   },
   image: {
     width: '100%',
-    height: 200,
-    backgroundColor: '#f5f5f5',
+    height: '100%',
+    resizeMode: 'cover',
   },
   placeholderImage: {
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  placeholderIcon: {
+    fontSize: 64,
+    marginBottom: SPACING.sm,
+  },
   placeholderText: {
-    color: '#999',
-    fontSize: 18,
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.textSecondary,
   },
-  content: {
-    padding: 20,
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 16,
+    left: 16,
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.md,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
+  backIcon: {
+    fontSize: 24,
+    color: COLORS.primary,
+    fontWeight: '700',
   },
-  price: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 20,
+  statusBadge: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 16,
+    right: 16,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.full,
+    ...SHADOWS.sm,
   },
-  section: {
-    marginBottom: 25,
+  statusAvailableBadge: {
+    backgroundColor: COLORS.success,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 8,
+  statusSoldBadge: {
+    backgroundColor: COLORS.error,
+  },
+  statusBadgeText: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.white,
+    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  content: {
+    padding: SPACING.lg,
+  },
+  priceCard: {
+    marginBottom: SPACING.md,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceInfo: {
+    flex: 1,
+  },
+  priceLabel: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  price: {
+    ...TYPOGRAPHY.styles.h1,
+    color: COLORS.secondary,
+    fontWeight: '800',
+  },
+  infoCard: {
+    marginBottom: SPACING.md,
+  },
+  title: {
+    ...TYPOGRAPHY.styles.h2,
+    color: COLORS.text,
+    marginBottom: SPACING.md,
+  },
+  descriptionSection: {
+    marginTop: SPACING.md,
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  sectionLabel: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: SPACING.sm,
+  },
   description: {
-    fontSize: 16,
-    color: '#333',
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.text,
     lineHeight: 24,
   },
-  category: {
-    fontSize: 16,
-    color: '#333',
+  sellerCard: {
+    marginBottom: SPACING.md,
+  },
+  sellerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+  },
+  sellerInfo: {
+    flex: 1,
+    marginLeft: SPACING.md,
   },
   sellerName: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
+    ...TYPOGRAPHY.styles.h5,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
-  status: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
+  sellerEmail: {
+    ...TYPOGRAPHY.styles.caption,
+    color: COLORS.textSecondary,
   },
-  statusAvailable: {
-    color: '#34C759',
+  actionButtons: {
+    marginTop: SPACING.sm,
   },
-  buttonContainer: {
-    flexDirection: 'column',
-    gap: 10,
-    marginTop: 20,
+  ownerActions: {
+    marginTop: SPACING.sm,
   },
-  button: {
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-    fontWeight: '600',
-  },
-  saveButton: {
-    backgroundColor: COLORS.secondary,
-  },
-  messageButton: {
-    backgroundColor: COLORS.primary,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  ownerBadge: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.primary,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+    padding: SPACING.md,
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: BORDER_RADIUS.md,
     fontWeight: '600',
   },
 });
