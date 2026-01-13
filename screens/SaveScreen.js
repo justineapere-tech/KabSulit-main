@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: SPACING.sm,
     right: SPACING.sm,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.semantic.error,
     borderRadius: BORDER_RADIUS.full,
     width: 32,
     height: 32,
