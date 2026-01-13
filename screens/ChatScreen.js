@@ -6,9 +6,10 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
@@ -24,6 +25,7 @@ export default function ChatScreen({ route, navigation }) {
   const [text, setText] = useState('');
   const [user, setUser] = useState(null);
   const flatRef = useRef(null);
+  const [keyboardHeight] = useState(new Animated.Value(0));
 
   // Hide the default navigation header
   useEffect(() => {
@@ -31,6 +33,37 @@ export default function ChatScreen({ route, navigation }) {
       headerShown: false,
     });
   }, [navigation]);
+
+  // Keyboard handling for Android
+  useEffect(() => {
+    const keyboardShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        Animated.timing(keyboardHeight, {
+          toValue: e.endCoordinates.height,
+          duration: Platform.OS === 'ios' ? 250 : 100,
+          useNativeDriver: false,
+        }).start();
+        // Scroll to end when keyboard opens
+        setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 150);
+      }
+    );
+    const keyboardHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        Animated.timing(keyboardHeight, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? 250 : 100,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardShowListener.remove();
+      keyboardHideListener.remove();
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -258,11 +291,7 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
+    <View style={styles.container}>
       {/* Chat Header with Gradient Effect */}
       <View style={styles.header}>
         <View style={styles.headerGradient}>
@@ -314,11 +343,12 @@ export default function ChatScreen({ route, navigation }) {
           contentContainerStyle={styles.messagesList}
           onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: true })}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         />
       )}
 
       {/* Modern Message Input */}
-      <View style={styles.inputContainer}>
+      <Animated.View style={[styles.inputContainer, { marginBottom: keyboardHeight }]}>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
@@ -340,10 +370,8 @@ export default function ChatScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
         </View>
-      </View>
-
-      {/* Delete conversation modal removed */}
-    </KeyboardAvoidingView>
+      </Animated.View>
+    </View>
   );
 }
 

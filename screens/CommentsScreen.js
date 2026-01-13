@@ -9,8 +9,9 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
+  Animated,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
@@ -31,11 +32,41 @@ export default function CommentsScreen({ navigation, route }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
+  const [keyboardHeight] = useState(new Animated.Value(0));
 
   // Hide the navigator header; we render our own screen header
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
+
+  // Keyboard handling for Android
+  useEffect(() => {
+    const keyboardShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        Animated.timing(keyboardHeight, {
+          toValue: e.endCoordinates.height,
+          duration: Platform.OS === 'ios' ? 250 : 100,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+    const keyboardHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        Animated.timing(keyboardHeight, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? 250 : 100,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardShowListener.remove();
+      keyboardHideListener.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (itemId) {
@@ -268,6 +299,7 @@ export default function CommentsScreen({ navigation, route }) {
           renderItem={renderComment}
           keyExtractor={(comment) => comment.id}
           contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="chatbubble-outline" size={64} color={COLORS.text.tertiary} />
@@ -279,10 +311,7 @@ export default function CommentsScreen({ navigation, route }) {
       )}
 
       {/* Input Section */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.inputContainer}
-      >
+      <Animated.View style={[styles.inputContainer, { marginBottom: keyboardHeight }]}>
         <View style={styles.ratingSelector}>
           <Text style={styles.ratingLabel}>Your Rating:</Text>
           <View style={styles.stars}>
@@ -326,7 +355,7 @@ export default function CommentsScreen({ navigation, route }) {
             )}
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </Animated.View>
 
       <ConfirmModal
         visible={deleteModalVisible}

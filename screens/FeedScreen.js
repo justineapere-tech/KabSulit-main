@@ -495,16 +495,6 @@ export default function FeedScreen({ navigation }) {
         }
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
-        ListHeaderComponent={
-          refreshing ? (
-            <View style={styles.refreshHeader}>
-              <View style={styles.refreshCircle}>
-                <ActivityIndicator size="large" color={COLORS.primary.main} />
-              </View>
-              <Text style={styles.refreshText}>Refreshing...</Text>
-            </View>
-          ) : null
-        }
         ListFooterComponent={
           isLoadingMore ? (
             <View style={styles.loadMoreContainer}>

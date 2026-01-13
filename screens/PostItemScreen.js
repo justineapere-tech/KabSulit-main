@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from "expo-image-picker";
+import { File } from "expo-file-system/next";
+import { decode } from "base64-arraybuffer";
 import { supabase } from "../config/supabase";
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, LAYOUT } from "../config/theme";
 import Button from "../components/Button";
@@ -65,16 +67,21 @@ export default function PostItemScreen({ navigation }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      const fileExt = imageUri.split(".").pop();
+      // Read the file as base64 using the new File API (Expo SDK 54+)
+      const file = new File(imageUri);
+      const base64 = await file.base64();
+
+      const fileExt = imageUri.split(".").pop().toLowerCase();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
+      const contentType = `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
 
+      // Upload using ArrayBuffer decoded from base64
       const { error: uploadError } = await supabase.storage
         .from("item-images")
-        .upload(filePath, blob, {
-          contentType: `image/${fileExt}`,
+        .upload(filePath, decode(base64), {
+          contentType,
+          upsert: false,
         });
 
       if (uploadError) throw uploadError;
