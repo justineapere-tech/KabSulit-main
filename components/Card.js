@@ -28,7 +28,7 @@ export default function Card({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface.primary,
+    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
   },
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   
   // Variants
   default: {
-    ...SHADOWS.card,
+    ...SHADOWS.sm,
   },
   
   elevated: {

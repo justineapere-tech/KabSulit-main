@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,9 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from '../config/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../config/theme';
 import ConfirmModal from '../components/ConfirmModal';
 import Button from '../components/Button';
 import Chip from '../components/Chip';
@@ -28,6 +29,11 @@ export default function MyItemsScreen({ navigation }) {
   useEffect(() => {
     loadMyItems();
   }, []);
+
+  // Hide the navigator header; we render our own header with back button
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
 
   const loadMyItems = async () => {
     try {
@@ -127,7 +133,7 @@ export default function MyItemsScreen({ navigation }) {
           <Image source={{ uri: item.image_url }} style={styles.itemImage} />
         ) : (
           <View style={[styles.itemImage, styles.placeholderImage]}>
-            <Text style={styles.placeholderText}>📷</Text>
+            <Ionicons name="camera-outline" size={32} color={COLORS.text.tertiary} />
           </View>
         )}
         <View style={styles.itemInfo}>
@@ -153,7 +159,7 @@ export default function MyItemsScreen({ navigation }) {
         onPress={() => handleDeleteItem(item.id)}
         disabled={deletingId === item.id}
       >
-        <Text style={styles.deleteIcon}>✕</Text>
+        <Ionicons name="close" size={16} color={COLORS.white} />
       </TouchableOpacity>
     </View>
   );
@@ -161,7 +167,7 @@ export default function MyItemsScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={COLORS.primary.main} />
       </View>
     );
   }
@@ -169,7 +175,16 @@ export default function MyItemsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Items</Text>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Items</Text>
+        </View>
       </View>
       <FlatList
         data={items}
@@ -210,23 +225,40 @@ export default function MyItemsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.warm.cream,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.warm.cream,
   },
   header: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.warm.cream,
     paddingHorizontal: SPACING.lg,
     paddingTop: Platform.OS === 'ios' ? 50 : SPACING.lg,
     paddingBottom: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.light,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
     ...SHADOWS.sm,
   },
   headerTitle: {
-    ...TYPOGRAPHY.styles.h2,
-    color: COLORS.white,
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.text.primary,
   },
   listContent: {
     padding: SPACING.md,
@@ -244,61 +276,61 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   itemImage: {
     width: '100%',
     height: 120,
-    backgroundColor: COLORS.gray200,
+    backgroundColor: COLORS.warm.cream,
   },
   placeholderImage: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.gray100,
+    backgroundColor: COLORS.warm.cream,
   },
   placeholderText: {
-    fontSize: SIZES.xxl,
+    fontSize: 24,
   },
   itemInfo: {
     padding: SPACING.md,
   },
   itemTitle: {
-    fontSize: SIZES.md,
+    fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
   itemPrice: {
-    fontSize: SIZES.lg,
+    fontSize: 16,
     fontWeight: '700',
-    color: COLORS.primary,
+    color: COLORS.primary.main,
     marginBottom: SPACING.xs,
   },
   itemStatus: {
-    fontSize: SIZES.xs,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: COLORS.text.secondary,
     fontWeight: '500',
   },
   statusAvailable: {
-    color: COLORS.success,
+    color: COLORS.semantic.success,
   },
   statusSold: {
-    color: COLORS.error,
+    color: COLORS.semantic.error,
   },
   deleteButton: {
     position: 'absolute',
     top: SPACING.sm,
     right: SPACING.sm,
-    backgroundColor: COLORS.error,
+    backgroundColor: COLORS.semantic.error,
     width: 28,
     height: 28,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   deleteIcon: {
-    fontSize: SIZES.md,
+    fontSize: 14,
     color: COLORS.white,
     fontWeight: '700',
   },
@@ -313,21 +345,21 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   emptyText: {
-    fontSize: SIZES.lg,
-    color: COLORS.textSecondary,
+    fontSize: 16,
+    color: COLORS.text.secondary,
     marginBottom: SPACING.lg,
     textAlign: 'center',
   },
   postButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary.main,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.small,
+    borderRadius: BORDER_RADIUS.full,
+    ...SHADOWS.sm,
   },
   postButtonText: {
     color: COLORS.white,
-    fontSize: SIZES.md,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

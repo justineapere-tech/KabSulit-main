@@ -11,7 +11,10 @@ import {
   TextInput,
   Alert,
   Platform,
+  Dimensions,
 } from "react-native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ConfirmModal from '../components/ConfirmModal';
 import SaveToCollectionsModal from '../components/SaveToCollectionsModal';
 import { supabase } from "../config/supabase";
@@ -22,6 +25,10 @@ import EmptyState from '../components/EmptyState';
 import Avatar from '../components/Avatar';
 
 const CATEGORIES = ["All", "Books", "Notes", "Electronics", "Furniture", "Clothing", "Other"];
+
+const { width: screenWidth } = Dimensions.get('window');
+const logoWidth = Math.min(screenWidth * 0.85, 350);
+const logoHeight = logoWidth * 0.5;
 
 export default function FeedScreen({ navigation }) {
   const [items, setItems] = useState([]);
@@ -37,6 +44,10 @@ export default function FeedScreen({ navigation }) {
   const [confirmPayload, setConfirmPayload] = useState(null);
   const [saveModalVisible, setSaveModalVisible] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [pageOffset, setPageOffset] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
     getCurrentUser();
@@ -101,18 +112,21 @@ export default function FeedScreen({ navigation }) {
     setFilteredItems(filtered);
   };
 
-  const loadItems = async () => {
+  const loadItems = async (isLoadMore = false) => {
     try {
+      const offset = isLoadMore ? pageOffset : 0;
       const { data: itemsData, error: itemsError } = await supabase
         .from("items")
         .select("*")
         .eq("status", "available")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(offset, offset + pageSize - 1);
 
       if (itemsError) throw itemsError;
 
       if (!itemsData || itemsData.length === 0) {
-        setItems([]);
+        if (!isLoadMore) setItems([]);
+        setHasMore(false);
         return;
       }
 
@@ -131,19 +145,44 @@ export default function FeedScreen({ navigation }) {
         profiles: profilesData?.find(profile => profile.id === item.user_id) || null,
       }));
 
-      setItems(itemsWithProfiles);
+      if (isLoadMore) {
+        // Append new items
+        setItems(prev => [...prev, ...itemsWithProfiles]);
+        setPageOffset(offset + pageSize);
+      } else {
+        // Replace items (initial load or refresh)
+        setItems(itemsWithProfiles);
+        setPageOffset(pageSize);
+      }
+
+      // If we got fewer items than pageSize, there are no more items
+      if (itemsData.length < pageSize) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
     } catch (error) {
       console.error("Error loading items:", error);
-      setItems([]);
+      if (!isLoadMore) setItems([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setIsLoadingMore(false);
     }
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadItems();
+    setPageOffset(0);
+    setHasMore(true);
+    loadItems(false);
+  };
+
+  const handleEndReached = () => {
+    if (!isLoadingMore && hasMore && !refreshing && !loading) {
+      setIsLoadingMore(true);
+      loadItems(true);
+    }
   };
 
   const handleDeletePost = (itemId, userId) => {
@@ -259,7 +298,7 @@ export default function FeedScreen({ navigation }) {
       <View style={styles.cardHeader}>
         <TouchableOpacity
           style={styles.userSection}
-          onPress={() => navigation.navigate("Profile", { userId: item.user_id })}
+          onPress={() => navigation.navigate("UserProfile", { userId: item.user_id })}
         >
           <Avatar
             name={item.profiles?.full_name}
@@ -285,7 +324,7 @@ export default function FeedScreen({ navigation }) {
             onPress={() => handleDeletePost(item.id, item.user_id)}
             style={styles.menuButton}
           >
-            <Text style={styles.menuIcon}>⋯</Text>
+            <MaterialIcons name="more-vert" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -303,7 +342,7 @@ export default function FeedScreen({ navigation }) {
           />
         ) : (
           <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderIcon}>📦</Text>
+            <Ionicons name="cube-outline" size={56} color={COLORS.text.tertiary} />
             <Text style={styles.placeholderText}>No Image</Text>
           </View>
         )}
@@ -344,19 +383,23 @@ export default function FeedScreen({ navigation }) {
               style={styles.actionBtn}
               onPress={() => handleLike(item.id)}
             >
-              <Text style={styles.actionIcon}>{likes[item.id] ? "❤️" : "🤍"}</Text>
+              <Ionicons 
+                name={likes[item.id] ? "heart" : "heart-outline"} 
+                size={22} 
+                color={likes[item.id] ? "#FF4B4B" : COLORS.text.secondary} 
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
               onPress={() => navigation.navigate("Comments", { itemId: item.id })}
             >
-              <Text style={styles.actionIcon}>💬</Text>
+              <Ionicons name="chatbubble-outline" size={22} color={COLORS.text.secondary} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
               onPress={() => handleSavePress(item.id)}
             >
-              <Text style={styles.actionIcon}>🔖</Text>
+              <Ionicons name="bookmark-outline" size={22} color={COLORS.text.secondary} />
             </TouchableOpacity>
           </View>
 
@@ -387,28 +430,27 @@ export default function FeedScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header - Clean minimal with title */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>KabSulit</Text>
-          <Text style={styles.headerSubtitle}>Campus Marketplace</Text>
+          <Text style={styles.headerTitle}>Home</Text>
         </View>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchSection}>
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search" size={20} color={COLORS.text.tertiary} style={{ marginRight: SPACING.sm }} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search items or sellers..."
+            placeholder="Search posts..."
             placeholderTextColor={COLORS.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={styles.clearIcon}>✕</Text>
+              <Ionicons name="close-circle" size={20} color={COLORS.text.tertiary} />
             </TouchableOpacity>
           )}
         </View>
@@ -446,11 +488,33 @@ export default function FeedScreen({ navigation }) {
             onRefresh={onRefresh}
             colors={[COLORS.primary.main]}
             tintColor={COLORS.primary.main}
+            progressBackgroundColor={COLORS.white}
+            size={50}
           />
+        }
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        ListHeaderComponent={
+          refreshing ? (
+            <View style={styles.refreshHeader}>
+              <View style={styles.refreshCircle}>
+                <ActivityIndicator size="large" color={COLORS.primary.main} />
+              </View>
+              <Text style={styles.refreshText}>Refreshing...</Text>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          isLoadingMore ? (
+            <View style={styles.loadMoreContainer}>
+              <ActivityIndicator size="small" color={COLORS.primary.main} />
+              <Text style={styles.loadMoreText}>Loading more...</Text>
+            </View>
+          ) : null
         }
         ListEmptyComponent={
           <EmptyState
-            icon={<Text style={styles.emptyIcon}>📭</Text>}
+            icon={<Ionicons name="mail-open-outline" size={64} color={COLORS.text.tertiary} />}
             title={
               searchQuery || selectedCategory !== "All"
                 ? "No items found"
@@ -491,85 +555,95 @@ export default function FeedScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.surface.secondary,
+    backgroundColor: COLORS.warm.cream,
   },
 
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.surface.secondary,
+    backgroundColor: COLORS.warm.cream,
   },
 
   loadingText: {
-    ...TYPOGRAPHY.styles.body,
+    fontSize: 14,
     color: COLORS.text.secondary,
     marginTop: SPACING.md,
   },
 
-  // Header
+  // Header - Clean minimal style
   header: {
-    backgroundColor: COLORS.primary.main,
-    paddingTop: Platform.OS === 'ios' ? SPACING.huge : SPACING.xl,
-    paddingBottom: SPACING.lg,
+    backgroundColor: COLORS.warm.cream,
+    paddingTop: Platform.OS === 'ios' ? 50 : SPACING.lg,
+    paddingBottom: SPACING.sm,
     paddingHorizontal: SPACING.base,
   },
 
   headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
 
+  headerLogo: {
+    width: 120,
+    height: 40,
+  },
+  
   headerTitle: {
-    ...TYPOGRAPHY.styles.h2,
-    color: COLORS.white,
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.text.primary,
   },
 
   headerSubtitle: {
-    ...TYPOGRAPHY.styles.bodySmall,
-    color: COLORS.secondary.lighter,
+    fontSize: 14,
+    color: COLORS.text.secondary,
     marginTop: SPACING.xxs,
   },
 
   // Search Section
   searchSection: {
     paddingHorizontal: SPACING.base,
-    paddingTop: SPACING.base,
-    backgroundColor: COLORS.surface.secondary,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.sm,
+    backgroundColor: COLORS.warm.cream,
   },
 
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface.primary,
-    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.full,
     paddingHorizontal: SPACING.base,
-    height: LAYOUT.inputHeight,
+    height: 48,
     ...SHADOWS.sm,
   },
 
   searchIcon: {
-    fontSize: 20,
+    fontSize: 18,
     marginRight: SPACING.sm,
+    color: COLORS.text.tertiary,
   },
 
   searchInput: {
     flex: 1,
-    ...TYPOGRAPHY.styles.body,
+    fontSize: 15,
     color: COLORS.text.primary,
     padding: 0,
   },
 
   clearIcon: {
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.text.tertiary,
     paddingLeft: SPACING.sm,
   },
 
   // Category Section
   categorySection: {
-    paddingTop: SPACING.base,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.sm,
-    backgroundColor: COLORS.surface.secondary,
+    backgroundColor: COLORS.warm.cream,
   },
 
   categoryList: {
@@ -583,9 +657,11 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
-  // Item Card
+  // Item Card - Modern social media style
   itemCard: {
     marginBottom: SPACING.base,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.white,
     overflow: 'hidden',
   },
 
@@ -594,7 +670,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.base,
-    paddingTop: SPACING.base,
+    paddingTop: SPACING.md,
     paddingBottom: SPACING.sm,
   },
 
@@ -613,14 +689,15 @@ const styles = StyleSheet.create({
   },
 
   userName: {
-    ...TYPOGRAPHY.styles.label,
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.text.primary,
   },
 
   postDate: {
-    ...TYPOGRAPHY.styles.caption,
+    fontSize: 12,
     color: COLORS.text.tertiary,
-    marginTop: SPACING.xxs,
+    marginTop: 2,
   },
 
   menuButton: {
@@ -628,54 +705,55 @@ const styles = StyleSheet.create({
   },
 
   menuIcon: {
-    fontSize: 24,
+    fontSize: 20,
     color: COLORS.text.secondary,
   },
 
   // Image
   itemImage: {
     width: '100%',
-    height: 280,
+    height: 260,
     backgroundColor: COLORS.surface.tertiary,
   },
 
   placeholderImage: {
     width: '100%',
-    height: 280,
+    height: 260,
     backgroundColor: COLORS.surface.tertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   placeholderIcon: {
-    fontSize: 64,
+    fontSize: 56,
     marginBottom: SPACING.sm,
   },
 
   placeholderText: {
-    ...TYPOGRAPHY.styles.bodySmall,
+    fontSize: 13,
     color: COLORS.text.tertiary,
   },
 
-  // Category Overlay
+  // Category Overlay - Positioned on image
   categoryOverlay: {
     position: 'absolute',
-    top: SPACING.md,
-    right: SPACING.md,
+    top: SPACING.sm,
+    right: SPACING.sm,
   },
 
   categoryTag: {
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: 'rgba(27, 94, 32, 0.9)',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.md,
-    ...SHADOWS.sm,
+    borderRadius: BORDER_RADIUS.full,
   },
 
   categoryTagText: {
-    ...TYPOGRAPHY.styles.caption,
+    fontSize: 11,
     color: COLORS.white,
-    fontWeight: TYPOGRAPHY.weight.bold,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   // Card Content
@@ -683,27 +761,63 @@ const styles = StyleSheet.create({
     padding: SPACING.base,
   },
 
+  // Price & Stock Badges Row
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+
+  priceBadge: {
+    backgroundColor: COLORS.primary.main,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
+    marginRight: SPACING.sm,
+  },
+
+  priceBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+
+  stockBadge: {
+    backgroundColor: COLORS.primary.light,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+
+  stockBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+
   itemTitle: {
-    ...TYPOGRAPHY.styles.h4,
+    fontSize: 16,
+    fontWeight: '600',
     color: COLORS.text.primary,
     marginBottom: SPACING.xs,
+    lineHeight: 22,
   },
 
   itemPrice: {
-    ...TYPOGRAPHY.styles.h3,
+    fontSize: 20,
     color: COLORS.primary.main,
-    fontWeight: TYPOGRAPHY.weight.bold,
+    fontWeight: '700',
     marginBottom: SPACING.sm,
   },
 
   itemDescription: {
-    ...TYPOGRAPHY.styles.bodySmall,
+    fontSize: 14,
     color: COLORS.text.secondary,
-    lineHeight: TYPOGRAPHY.size.sm * 1.5,
-    marginBottom: SPACING.md,
+    lineHeight: 20,
+    marginBottom: SPACING.sm,
   },
 
-  // Card Actions
+  // Card Actions - Social media style
   cardActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -720,29 +834,76 @@ const styles = StyleSheet.create({
   },
 
   actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginRight: SPACING.lg,
+    paddingVertical: SPACING.xs,
   },
 
   actionIcon: {
-    fontSize: 22,
+    fontSize: 20,
+  },
+
+  actionCount: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    marginLeft: SPACING.xs,
   },
 
   messageButton: {
     backgroundColor: COLORS.primary.main,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.full,
     ...SHADOWS.sm,
   },
 
   messageButtonText: {
-    ...TYPOGRAPHY.styles.label,
+    fontSize: 13,
     color: COLORS.white,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    fontWeight: '600',
+  },
+
+  // Refresh Header
+  refreshHeader: {
+    paddingVertical: SPACING.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.warm.cream,
+  },
+
+  refreshCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+    ...SHADOWS.md,
+  },
+
+  refreshText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    fontWeight: '600',
+  },
+
+  // Load More
+  loadMoreContainer: {
+    paddingVertical: SPACING.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  loadMoreText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    marginTop: SPACING.sm,
   },
 
   // Empty State
   emptyIcon: {
-    fontSize: 72,
+    fontSize: 64,
   },
 });

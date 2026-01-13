@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   },
   
   secondary: {
-    backgroundColor: COLORS.secondary.main,
+    backgroundColor: COLORS.black,
     ...SHADOWS.button,
   },
   
@@ -107,60 +107,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.base,
     paddingVertical: SPACING.sm,
     minHeight: 36,
+    borderRadius: BORDER_RADIUS.full,
   },
   
   medium: {
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.full,
   },
   
   large: {
     paddingHorizontal: SPACING.xxl,
     paddingVertical: SPACING.lg,
-    minHeight: 56,
+    minHeight: 52,
+    borderRadius: BORDER_RADIUS.full,
   },
   
   // Text styles
   primaryText: {
     color: COLORS.white,
-    fontSize: TYPOGRAPHY.size.md,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    fontSize: 15,
+    fontWeight: '600',
   },
   
   secondaryText: {
-    color: COLORS.black,
-    fontSize: TYPOGRAPHY.size.md,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: '600',
   },
   
   outlineText: {
     color: COLORS.primary.main,
-    fontSize: TYPOGRAPHY.size.md,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    fontSize: 15,
+    fontWeight: '600',
   },
   
   textText: {
     color: COLORS.primary.main,
-    fontSize: TYPOGRAPHY.size.md,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    fontSize: 15,
+    fontWeight: '600',
   },
   
   dangerText: {
     color: COLORS.white,
-    fontSize: TYPOGRAPHY.size.md,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    fontSize: 15,
+    fontWeight: '600',
   },
   
   smallText: {
-    fontSize: TYPOGRAPHY.size.sm,
+    fontSize: 13,
   },
   
   mediumText: {
-    fontSize: TYPOGRAPHY.size.md,
+    fontSize: 15,
   },
   
   largeText: {
-    fontSize: TYPOGRAPHY.size.lg,
+    fontSize: 16,
   },
   
   // States

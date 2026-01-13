@@ -15,8 +15,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from "../config/supabase";
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from "../config/theme";
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from "../config/theme";
 import ConfirmModal from "../components/ConfirmModal";
 
 export default function SaveScreen({ navigation }) {
@@ -288,7 +289,7 @@ export default function SaveScreen({ navigation }) {
           <Image source={{ uri: item.image_url }} style={styles.itemImage} />
         ) : (
           <View style={[styles.itemImage, styles.placeholderImage]}>
-            <Text style={styles.placeholderText}>📷</Text>
+            <Ionicons name="camera-outline" size={32} color={COLORS.text.tertiary} />
           </View>
         )}
       </View>
@@ -297,7 +298,7 @@ export default function SaveScreen({ navigation }) {
         style={styles.removeButton}
         onPress={() => handleRemoveItemFromCollection(item.id)}
       >
-        <Text style={styles.removeButtonText}>✕</Text>
+        <Ionicons name="close" size={18} color="#FFFFFF" />
       </TouchableOpacity>
 
       <View style={styles.itemInfo}>
@@ -387,7 +388,7 @@ export default function SaveScreen({ navigation }) {
           ]}
           onPress={() => handleSelectCollection("all")}
         >
-          <Text style={styles.collectionButtonIcon}>📦</Text>
+          <Ionicons name="cube-outline" size={20} color={selectedCollection === "all" ? COLORS.primary.main : COLORS.text.secondary} />
           <Text
             style={[
               styles.collectionButtonText,
@@ -406,7 +407,7 @@ export default function SaveScreen({ navigation }) {
           ]}
           onPress={() => handleSelectCollection("favorites")}
         >
-          <Text style={styles.collectionButtonIcon}>⭐</Text>
+          <Ionicons name="star" size={20} color={selectedCollection === "favorites" ? COLORS.semantic.warning : COLORS.text.secondary} />
           <Text
             style={[
               styles.collectionButtonText,
@@ -432,7 +433,7 @@ export default function SaveScreen({ navigation }) {
               setDeleteConfirmVisible(true);
             }}
           >
-            <Text style={styles.collectionButtonIcon}>📁</Text>
+            <Ionicons name="folder-outline" size={20} color={selectedCollection === collection.id ? COLORS.text.primary : COLORS.text.secondary} style={{ marginRight: SPACING.sm }} />
             <Text
               style={[
                 styles.collectionButtonText,
@@ -464,7 +465,7 @@ export default function SaveScreen({ navigation }) {
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>💾</Text>
+          <Ionicons name="bookmark-outline" size={64} color={COLORS.text.tertiary} />
           <Text style={styles.emptyText}>{emptyMessage}</Text>
           <TouchableOpacity
             style={styles.browseButton}
@@ -489,7 +490,7 @@ export default function SaveScreen({ navigation }) {
                 placeholder="Collection name (e.g., 'Winter Finds')"
                 value={newCollectionName}
                 onChangeText={setNewCollectionName}
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={COLORS.text.secondary}
                 maxLength={30}
               />
               <Text style={styles.charCounter}>
@@ -542,7 +543,7 @@ export default function SaveScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.warm.cream,
   },
   centerContainer: {
     flex: 1,
@@ -551,21 +552,22 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   header: {
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: COLORS.warm.cream,
     paddingTop: Platform.OS === 'ios' ? SPACING.huge : SPACING.xl,
     paddingBottom: SPACING.xl,
     paddingHorizontal: SPACING.base,
-    ...SHADOWS.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.light,
   },
   headerTitle: {
-    ...TYPOGRAPHY.styles.h2,
-    color: COLORS.primary.onPrimary,
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
   headerSubtitle: {
-    ...TYPOGRAPHY.styles.bodySmall,
-    color: COLORS.primary.onPrimary,
-    opacity: 0.9,
+    fontSize: 13,
+    color: COLORS.text.secondary,
   },
   collectionsHeader: {
     flexDirection: "row",
@@ -576,7 +578,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.sm,
   },
   collectionsLabel: {
-    fontSize: SIZES.sm,
+    fontSize: 12,
     fontWeight: "700",
     color: COLORS.text.secondary,
     textTransform: "uppercase",
@@ -586,12 +588,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary.main,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.full,
   },
   addCollectionButtonText: {
-    color: COLORS.primary.onPrimary,
+    color: COLORS.white,
     fontWeight: "700",
-    fontSize: SIZES.sm,
+    fontSize: 12,
   },
   collectionsScroll: {
     flexGrow: 0,
@@ -605,29 +607,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.full,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderWidth: 2,
-    borderColor: COLORS.border,
-    ...SHADOWS.small,
+    borderColor: COLORS.border.light,
+    ...SHADOWS.sm,
   },
   collectionButtonActive: {
-    backgroundColor: COLORS.secondary,
-    borderColor: COLORS.secondary,
+    backgroundColor: COLORS.secondary.main,
+    borderColor: COLORS.secondary.main,
   },
   collectionButtonIcon: {
-    fontSize: SIZES.lg,
+    fontSize: 16,
     marginRight: SPACING.sm,
   },
   collectionButtonText: {
-    fontSize: SIZES.sm,
+    fontSize: 13,
     fontWeight: "600",
-    color: COLORS.textSecondary,
+    color: COLORS.text.secondary,
     maxWidth: 100,
   },
   collectionButtonTextActive: {
-    color: COLORS.text,
+    color: COLORS.text.primary,
     fontWeight: "700",
   },
   listContent: {
@@ -644,7 +646,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     overflow: "hidden",
-    ...SHADOWS.small,
+    ...SHADOWS.sm,
   },
   itemImageContainer: {
     width: "100%",
@@ -657,10 +659,10 @@ const styles = StyleSheet.create({
   placeholderImage: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORS.gray100,
+    backgroundColor: COLORS.warm.cream,
   },
   placeholderText: {
-    fontSize: SIZES.xl,
+    fontSize: 20,
   },
   removeButton: {
     position: "absolute",
@@ -672,37 +674,37 @@ const styles = StyleSheet.create({
     height: 32,
     justifyContent: "center",
     alignItems: "center",
-    ...SHADOWS.medium,
+    ...SHADOWS.sm,
   },
   removeButtonText: {
-    fontSize: SIZES.lg,
-    color: COLORS.error,
+    fontSize: 16,
+    color: COLORS.semantic.error,
     fontWeight: "700",
   },
   itemInfo: {
     padding: SPACING.md,
   },
   itemTitle: {
-    fontSize: SIZES.sm,
+    fontSize: 13,
     fontWeight: "600",
-    color: COLORS.text,
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
   itemPrice: {
-    fontSize: SIZES.md,
+    fontSize: 15,
     fontWeight: "700",
-    color: COLORS.secondary,
+    color: COLORS.secondary.main,
     marginBottom: SPACING.xs,
   },
   itemCategory: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: COLORS.primary.main,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.full,
     alignSelf: "flex-start",
   },
   itemCategoryText: {
-    fontSize: SIZES.xs,
+    fontSize: 10,
     color: COLORS.white,
     fontWeight: "600",
   },
@@ -717,37 +719,37 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   emptyText: {
-    fontSize: SIZES.md,
-    color: COLORS.textSecondary,
+    fontSize: 15,
+    color: COLORS.text.secondary,
     textAlign: "center",
     marginBottom: SPACING.lg,
   },
   browseButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary.main,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.full,
   },
   browseButtonText: {
     color: COLORS.white,
-    fontSize: SIZES.md,
+    fontSize: 15,
     fontWeight: "700",
   },
   noUserText: {
-    fontSize: SIZES.md,
-    color: COLORS.textSecondary,
+    fontSize: 15,
+    color: COLORS.text.secondary,
     marginBottom: SPACING.lg,
     textAlign: "center",
   },
   loginButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary.main,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.full,
   },
   loginButtonText: {
     color: COLORS.white,
-    fontSize: SIZES.md,
+    fontSize: 15,
     fontWeight: "600",
   },
   modalContainer: {
@@ -761,30 +763,30 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
     width: "85%",
-    ...SHADOWS.medium,
+    ...SHADOWS.md,
   },
   modalTitle: {
-    fontSize: SIZES.lg,
+    fontSize: 17,
     fontWeight: "700",
-    color: COLORS.text,
+    color: COLORS.text.primary,
     marginBottom: SPACING.md,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
+    borderColor: COLORS.border.light,
+    borderRadius: BORDER_RADIUS.full,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
-    fontSize: SIZES.md,
-    color: COLORS.text,
+    fontSize: 15,
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
   charCounter: {
-    fontSize: SIZES.xs,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: COLORS.text.secondary,
     textAlign: "right",
     marginBottom: SPACING.lg,
   },
@@ -795,24 +797,24 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.full,
     alignItems: "center",
     justifyContent: "center",
   },
   modalCancelButton: {
-    backgroundColor: COLORS.gray100,
+    backgroundColor: COLORS.warm.cream,
   },
   modalCancelButtonText: {
-    color: COLORS.text,
+    color: COLORS.text.primary,
     fontWeight: "600",
-    fontSize: SIZES.md,
+    fontSize: 15,
   },
   modalCreateButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary.main,
   },
   modalCreateButtonText: {
     color: COLORS.white,
     fontWeight: "700",
-    fontSize: SIZES.md,
+    fontSize: 15,
   },
 });

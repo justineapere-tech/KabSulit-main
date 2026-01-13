@@ -22,6 +22,7 @@ export default function Input({
   numberOfLines = 1,
   style,
   inputStyle,
+  inputContainerStyle,
   ...props
 }) {
   const [isFocused, setIsFocused] = useState(false);
@@ -36,6 +37,7 @@ export default function Input({
           isFocused && styles.inputContainerFocused,
           error && styles.inputContainerError,
           multiline && styles.inputContainerMultiline,
+          inputContainerStyle,
         ]}
       >
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
@@ -85,8 +87,8 @@ const styles = StyleSheet.create({
   },
   
   label: {
-    fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: TYPOGRAPHY.weight.medium,
+    fontSize: 13,
+    fontWeight: '500',
     color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
@@ -94,11 +96,11 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface.primary,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: COLORS.border.main,
-    borderRadius: BORDER_RADIUS.md,
-    minHeight: LAYOUT.inputHeight,
+    borderColor: COLORS.border.input,
+    borderRadius: BORDER_RADIUS.full,
+    minHeight: 50,
     paddingHorizontal: SPACING.base,
   },
   
@@ -115,11 +117,12 @@ const styles = StyleSheet.create({
     minHeight: 100,
     alignItems: 'flex-start',
     paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
   },
   
   input: {
     flex: 1,
-    fontSize: TYPOGRAPHY.size.md,
+    fontSize: 15,
     color: COLORS.text.primary,
     paddingVertical: 0,
   },
@@ -150,23 +153,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: SPACING.xs,
-    paddingHorizontal: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
   },
   
   errorText: {
     flex: 1,
-    fontSize: TYPOGRAPHY.size.sm,
+    fontSize: 12,
     color: COLORS.semantic.error,
   },
   
   helperText: {
     flex: 1,
-    fontSize: TYPOGRAPHY.size.sm,
+    fontSize: 12,
     color: COLORS.text.secondary,
   },
   
   characterCount: {
-    fontSize: TYPOGRAPHY.size.xs,
+    fontSize: 11,
     color: COLORS.text.tertiary,
     marginLeft: SPACING.sm,
   },

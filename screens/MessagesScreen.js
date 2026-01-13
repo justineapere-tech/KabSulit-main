@@ -11,7 +11,9 @@ import {
   Image,
   Animated,
   Platform,
+  TextInput,
 } from "react-native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../config/supabase";
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from "../config/theme";
@@ -356,7 +358,11 @@ export default function MessagesScreen({ navigation }) {
           activeOpacity={0.7}
         >
           <View style={[styles.actionIconContainer, tab === "archived" && styles.actionIconContainerRestore]}>
-            <Text style={styles.actionIcon}>{tab === "archived" ? "📥" : "🗑️"}</Text>
+            <Ionicons 
+              name={tab === "archived" ? "arrow-undo-outline" : "trash-outline"} 
+              size={20} 
+              color={tab === "archived" ? COLORS.primary.main : COLORS.semantic.error}
+            />
           </View>
         </TouchableOpacity>
       </View>
@@ -374,67 +380,25 @@ export default function MessagesScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Modern Header with Gradient-like Effect */}
+      {/* Clean Header */}
       <View style={styles.headerWrapper}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View>
-              <Text style={styles.headerTitle}>💬 Messages</Text>
-              <Text style={styles.headerSubtitle}>
-                {activeTab === "active" 
-                  ? `${conversations.length} active conversation${conversations.length !== 1 ? 's' : ''}`
-                  : `${archivedConversations.length} archived`}
-              </Text>
+              <Text style={styles.headerTitle}>Chats</Text>
             </View>
           </View>
         </View>
 
-        {/* Modern Tab Selector - Integrated into header */}
-        <View style={styles.tabWrapper}>
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "active" && styles.tabActive]}
-              onPress={() => setActiveTab("active")}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.tabContent, activeTab === "active" && styles.tabContentActive]}>
-                <Text style={[styles.tabIcon, activeTab === "active" && styles.tabIconActive]}>
-                  💬
-                </Text>
-                <Text style={[styles.tabText, activeTab === "active" && styles.tabTextActive]}>
-                  Active
-                </Text>
-                {conversations.length > 0 && (
-                  <View style={[styles.tabBadge, activeTab === "active" && styles.tabBadgeActive]}>
-                    <Text style={[styles.tabBadgeText, activeTab === "active" && styles.tabBadgeTextActive]}>
-                      {conversations.length}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "archived" && styles.tabActive]}
-              onPress={() => setActiveTab("archived")}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.tabContent, activeTab === "archived" && styles.tabContentActive]}>
-                <Text style={[styles.tabIcon, activeTab === "archived" && styles.tabIconActive]}>
-                  📦
-                </Text>
-                <Text style={[styles.tabText, activeTab === "archived" && styles.tabTextActive]}>
-                  Archived
-                </Text>
-                {archivedConversations.length > 0 && (
-                  <View style={[styles.tabBadge, activeTab === "archived" && styles.tabBadgeActive]}>
-                    <Text style={[styles.tabBadgeText, activeTab === "archived" && styles.tabBadgeTextActive]}>
-                      {archivedConversations.length}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
+        {/* Search Bar for Chats */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={COLORS.text.tertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search chats"
+              placeholderTextColor={COLORS.text.tertiary}
+            />
           </View>
         </View>
       </View>
@@ -461,9 +425,11 @@ export default function MessagesScreen({ navigation }) {
           loading ? null : (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
-                <Text style={styles.emptyIcon}>
-                  {activeTab === "active" ? "💬" : "📦"}
-                </Text>
+                <Ionicons 
+                  name={activeTab === "active" ? "chatbubbles-outline" : "cube-outline"}
+                  size={64} 
+                  color={COLORS.text.tertiary}
+                />
               </View>
               <Text style={styles.emptyTitle}>
                 {activeTab === "active" ? "No messages yet" : "No archived conversations"}
@@ -503,7 +469,7 @@ export default function MessagesScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.surface.secondary,
+    backgroundColor: COLORS.warm.cream,
   },
 
   // Loading State
@@ -511,25 +477,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.surface.secondary,
+    backgroundColor: COLORS.warm.cream,
   },
 
   loadingText: {
     marginTop: SPACING.md,
-    ...TYPOGRAPHY.styles.body,
+    fontSize: 15,
     color: COLORS.text.secondary,
   },
 
-  // Header - Modern Design
+  // Header - Clean minimal style like reference
   headerWrapper: {
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: COLORS.warm.cream,
     paddingBottom: 0,
   },
 
   header: {
-    paddingTop: Platform.OS === 'ios' ? SPACING.huge + SPACING.md : SPACING.xl,
+    paddingTop: Platform.OS === 'ios' ? 50 : SPACING.xl,
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.md,
   },
 
   headerTop: {
@@ -539,32 +505,56 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
-    letterSpacing: -0.5,
   },
 
   headerSubtitle: {
-    fontSize: 15,
-    color: '#FFF176',
-    fontWeight: '600',
-    opacity: 0.95,
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    fontWeight: '500',
   },
 
-  // Modern Tab Design
-  tabWrapper: {
+  // Search bar for chats
+  searchSection: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.sm,
+    paddingBottom: SPACING.md,
+  },
+
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.full,
+    paddingHorizontal: SPACING.base,
+    height: 44,
+    ...SHADOWS.sm,
+  },
+
+  searchIcon: {
+    fontSize: 16,
+    marginRight: SPACING.sm,
+    color: COLORS.text.tertiary,
+  },
+
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.text.primary,
+  },
+
+  // Tab Design - Hidden for cleaner look
+  tabWrapper: {
+    display: 'none',
   },
 
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: COLORS.surface.tertiary,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.xxs,
-    gap: SPACING.xxs,
   },
 
   tab: {
@@ -575,18 +565,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.sm + 2,
+    paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
     gap: SPACING.xs,
   },
 
   tabContentActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
   },
 
   tabIcon: {
-    fontSize: 18,
+    fontSize: 16,
     opacity: 0.7,
   },
 
@@ -595,23 +585,21 @@ const styles = StyleSheet.create({
   },
 
   tabText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
-    opacity: 0.8,
+    color: COLORS.text.secondary,
   },
 
   tabTextActive: {
     color: COLORS.primary.main,
-    opacity: 1,
     fontWeight: '700',
   },
 
   tabBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: COLORS.surface.tertiary,
     borderRadius: BORDER_RADIUS.full,
-    minWidth: 22,
-    height: 22,
+    minWidth: 20,
+    height: 20,
     paddingHorizontal: SPACING.xs,
     justifyContent: 'center',
     alignItems: 'center',
@@ -624,30 +612,30 @@ const styles = StyleSheet.create({
   tabBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.text.secondary,
   },
 
   tabBadgeTextActive: {
-    color: '#FFFFFF',
+    color: COLORS.white,
   },
 
   // List Container
   listContainer: {
-    paddingTop: SPACING.sm,
+    paddingTop: SPACING.xs,
   },
 
   listContainerEmpty: {
     flexGrow: 1,
   },
 
-  // Conversation Card - Modern Design
+  // Conversation Card - Clean minimal card
   conversationCard: {
-    backgroundColor: COLORS.surface.primary,
+    backgroundColor: COLORS.white,
     marginHorizontal: SPACING.base,
     marginBottom: SPACING.sm,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
-    ...SHADOWS.md,
+    ...SHADOWS.sm,
   },
 
   conversationMain: {
@@ -660,7 +648,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     padding: SPACING.base,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingRight: SPACING.xs,
   },
 
@@ -671,24 +659,23 @@ const styles = StyleSheet.create({
 
   avatarBadge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -2,
+    right: -2,
     backgroundColor: COLORS.primary.main,
     borderRadius: BORDER_RADIUS.full,
-    minWidth: 24,
-    height: 24,
+    minWidth: 22,
+    height: 22,
     paddingHorizontal: SPACING.xs,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: COLORS.surface.primary,
-    ...SHADOWS.sm,
+    borderWidth: 2,
+    borderColor: COLORS.white,
   },
 
   avatarBadgeText: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: '700',
+    color: COLORS.white,
   },
 
   messageContent: {
@@ -700,13 +687,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.xs,
+    marginBottom: 4,
   },
 
   userName: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: COLORS.text.primary,
     marginRight: SPACING.sm,
   },
@@ -714,7 +701,6 @@ const styles = StyleSheet.create({
   metaInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
   },
 
   timestamp: {
@@ -728,17 +714,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.primary.main,
+    marginRight: SPACING.sm,
+  },
+
   messagePreview: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     lineHeight: 20,
     color: COLORS.text.secondary,
-    fontWeight: '400',
   },
 
   messagePreviewUnread: {
     color: COLORS.text.primary,
-    fontWeight: '600',
+    fontWeight: '500',
   },
 
   actionButton: {
@@ -746,11 +739,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.base,
+    display: 'none',
   },
 
   actionIconContainer: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: BORDER_RADIUS.md,
     backgroundColor: COLORS.surface.tertiary,
     justifyContent: 'center',
@@ -762,10 +756,10 @@ const styles = StyleSheet.create({
   },
 
   actionIcon: {
-    fontSize: 22,
+    fontSize: 20,
   },
 
-  // Empty State - Enhanced
+  // Empty State
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -775,21 +769,21 @@ const styles = StyleSheet.create({
   },
 
   emptyIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: BORDER_RADIUS.circle,
-    backgroundColor: COLORS.primary.container,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.secondary.container,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.xl,
   },
 
   emptyIcon: {
-    fontSize: 56,
+    fontSize: 48,
   },
 
   emptyTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: COLORS.text.primary,
     marginBottom: SPACING.sm,
@@ -797,10 +791,10 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.text.secondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
     marginBottom: SPACING.xl,
   },
 
@@ -808,13 +802,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary.main,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.xxl,
-    borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.md,
+    borderRadius: BORDER_RADIUS.full,
+    ...SHADOWS.sm,
   },
 
   emptyButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.white,
   },
 });

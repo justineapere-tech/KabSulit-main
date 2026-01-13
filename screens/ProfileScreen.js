@@ -14,6 +14,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { supabase } from "../config/supabase";
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, LAYOUT } from "../config/theme";
 import ConfirmModal from "../components/ConfirmModal";
@@ -30,10 +32,9 @@ export default function ProfileScreen({ navigation, route }) {
   const [itemCount, setItemCount] = useState(0);
   const [userItems, setUserItems] = useState([]);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
-  const previousUserIdRef = useRef(null);
-
-  // State to track if we should show own profile
-  const [forceOwnProfile, setForceOwnProfile] = useState(false);
+  
+  // Track the currently loaded profile ID to prevent re-renders
+  const currentlyLoadedUserIdRef = useRef(undefined);
 
   // Edit Profile Modal States
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -45,30 +46,27 @@ export default function ProfileScreen({ navigation, route }) {
   // Logout Confirmation Modal States
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
 
-  // Load profile on mount or when route params change
+  // Load profile on mount
   useEffect(() => {
-    // Initial load - will be handled by useFocusEffect
     loadUserProfile(null);
   }, []);
 
+  // When screen comes into focus, check if we need to reload
   useFocusEffect(
     React.useCallback(() => {
-      // When Profile tab comes into focus
-      const viewingUserId = route?.params?.userId;
+      const requestedUserId = route?.params?.userId;
       
-      // Only reset to own profile if we're returning from another tab without userId param
-      if (!viewingUserId && previousUserIdRef.current) {
-        // We had a userId before but now we don't - load own profile
-        loadUserProfile(null);
-      } else if (viewingUserId && viewingUserId !== previousUserIdRef.current) {
-        // New userId param - load that user
-        loadUserProfile(viewingUserId);
-      } else if (!viewingUserId && !previousUserIdRef.current) {
-        // First time or returning without any userId - load own profile
-        loadUserProfile(null);
+      // Only reload if the requested userId is different from what we currently have loaded
+      if (requestedUserId !== currentlyLoadedUserIdRef.current) {
+        // Clear data immediately to prevent showing stale data
+        setProfile(null);
+        setUserItems([]);
+        setItemCount(0);
+        
+        // Then load the new user
+        loadUserProfile(requestedUserId || null);
+        currentlyLoadedUserIdRef.current = requestedUserId;
       }
-      
-      previousUserIdRef.current = viewingUserId;
     }, [route?.params?.userId])
   );
 
@@ -77,14 +75,13 @@ export default function ProfileScreen({ navigation, route }) {
       setLoading(true);
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      // If viewingUserId is provided, show that user; otherwise show current user
-      const userIdToLoad = viewingUserId || currentUser?.id;
-      const isOwnProfile = !viewingUserId || viewingUserId === currentUser?.id;
+      if (!currentUser) return;
       
-      setIsOwnProfile(isOwnProfile);
-      setUser(isOwnProfile ? currentUser : null);
-
-      console.log("Loading profile - Own?", isOwnProfile, "User ID:", userIdToLoad);
+      // Determine which user to load
+      const userIdToLoad = viewingUserId || currentUser.id;
+      const isOwnProfile = !viewingUserId || viewingUserId === currentUser.id;
+      
+      console.log("Loading profile - Requested:", viewingUserId, "Own?", isOwnProfile, "User ID:", userIdToLoad);
 
       // Load the profile data
       const { data: profileData, error } = await supabase
@@ -97,6 +94,14 @@ export default function ProfileScreen({ navigation, route }) {
         throw error;
       }
       
+      // Verify we're still loading the same user (in case params changed during async operation)
+      if (userIdToLoad !== (currentlyLoadedUserIdRef.current || currentUser.id)) {
+        console.log("User ID changed during load, discarding old data");
+        return;
+      }
+      
+      setIsOwnProfile(isOwnProfile);
+      setUser(isOwnProfile ? currentUser : null);
       setProfile(profileData);
 
       // Load items
@@ -106,6 +111,12 @@ export default function ProfileScreen({ navigation, route }) {
         .eq('user_id', userIdToLoad)
         .eq('status', 'available')
         .order('created_at', { ascending: false });
+
+      // Verify again before setting state
+      if (userIdToLoad !== (currentlyLoadedUserIdRef.current || currentUser.id)) {
+        console.log("User ID changed during items load, discarding old data");
+        return;
+      }
 
       setUserItems(items || []);
       setItemCount(items?.length || 0);
@@ -129,7 +140,7 @@ export default function ProfileScreen({ navigation, route }) {
     return (
       <View style={styles.loadingContainer}>
         <EmptyState
-          icon={<Text style={styles.emptyIcon}>👤</Text>}
+          icon={<Ionicons name="person-circle-outline" size={64} color={COLORS.text.tertiary} />}
           title="Profile Not Found"
           description="This profile doesn't exist or has been removed"
           actionLabel="Go Back"
@@ -149,7 +160,7 @@ export default function ProfileScreen({ navigation, route }) {
         <Image source={{ uri: item.image_url }} style={styles.itemImage} />
       ) : (
         <View style={[styles.itemImage, styles.itemPlaceholder]}>
-          <Text style={styles.itemPlaceholderIcon}>📦</Text>
+          <Ionicons name="cube-outline" size={32} color={COLORS.text.tertiary} />
         </View>
       )}
       <View style={styles.itemDetails}>
@@ -180,13 +191,19 @@ export default function ProfileScreen({ navigation, route }) {
   const handleSaveProfile = async () => {
     try {
       setSavingProfile(true);
+      const updateData = {
+        full_name: editingName,
+        bio: editingBio,
+      };
+      
+      // Only include campus_id if it's not empty
+      if (editingCampusId.trim()) {
+        updateData.campus_id = editingCampusId;
+      }
+      
       const { error } = await supabase
         .from("profiles")
-        .update({
-          full_name: editingName,
-          campus_id: editingCampusId,
-          bio: editingBio,
-        })
+        .update(updateData)
         .eq("id", user.id);
 
       if (error) throw error;
@@ -194,8 +211,8 @@ export default function ProfileScreen({ navigation, route }) {
       setProfile({
         ...profile,
         full_name: editingName,
-        campus_id: editingCampusId,
         bio: editingBio,
+        ...(editingCampusId.trim() && { campus_id: editingCampusId }),
       });
 
       setEditModalVisible(false);
@@ -233,16 +250,14 @@ export default function ProfileScreen({ navigation, route }) {
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            {!isOwnProfile && (
+            {route?.name === 'UserProfile' && (
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => {
-                  previousUserIdRef.current = null;
-                  navigation.setParams({ userId: undefined });
-                  loadUserProfile(null);
+                  navigation.goBack();
                 }}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
               </TouchableOpacity>
             )}
             <View style={styles.headerSpacer} />
@@ -280,7 +295,7 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text style={styles.statLabel}>Listings</Text>
               </View>
               <View style={[styles.statBox, styles.statBoxBorder]}>
-                <Text style={styles.statIcon}>⭐</Text>
+                <Ionicons name="star" size={20} color={COLORS.semantic.warning} />
                 <Text style={styles.statLabel}>New Seller</Text>
               </View>
               <View style={styles.statBox}>
@@ -318,7 +333,7 @@ export default function ProfileScreen({ navigation, route }) {
               >
                 <View style={styles.actionCardContent}>
                   <View style={styles.actionIconCircle}>
-                    <Text style={styles.actionIcon}>➕</Text>
+                    <Ionicons name="add-circle" size={22} color={COLORS.primary.main} />
                   </View>
                   <View style={styles.actionText}>
                     <Text style={styles.actionTitle}>Post New Item</Text>
@@ -333,7 +348,7 @@ export default function ProfileScreen({ navigation, route }) {
               >
                 <View style={styles.actionCardContent}>
                   <View style={styles.actionIconCircle}>
-                    <Text style={styles.actionIcon}>📦</Text>
+                    <Ionicons name="cube-outline" size={22} color={COLORS.primary.main} />
                   </View>
                   <View style={styles.actionText}>
                     <Text style={styles.actionTitle}>My Listings</Text>
@@ -361,7 +376,7 @@ export default function ProfileScreen({ navigation, route }) {
               />
             ) : (
               <EmptyState
-                icon={<Text style={styles.emptyIcon}>📦</Text>}
+                icon={<Ionicons name="cube-outline" size={64} color={COLORS.text.tertiary} />}
                 title="No items listed"
                 description={
                   isOwnProfile
@@ -388,7 +403,7 @@ export default function ProfileScreen({ navigation, route }) {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Edit Profile</Text>
                 <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                  <Text style={styles.modalCloseIcon}>✕</Text>
+                  <Ionicons name="close" size={24} color={COLORS.text.secondary} />
                 </TouchableOpacity>
               </View>
 
@@ -398,7 +413,7 @@ export default function ProfileScreen({ navigation, route }) {
                   value={editingName}
                   onChangeText={setEditingName}
                   placeholder="Enter your full name"
-                  leftIcon={<Text style={styles.inputIcon}>👤</Text>}
+                  leftIcon={<Ionicons name="person" size={20} color={COLORS.text.tertiary} />}
                 />
 
                 <Input
@@ -406,7 +421,7 @@ export default function ProfileScreen({ navigation, route }) {
                   value={editingCampusId}
                   onChangeText={setEditingCampusId}
                   placeholder="Enter your campus ID"
-                  leftIcon={<Text style={styles.inputIcon}>🎓</Text>}
+                  leftIcon={<Ionicons name="school" size={20} color={COLORS.text.tertiary} />}
                 />
 
                 <Input
@@ -418,7 +433,7 @@ export default function ProfileScreen({ navigation, route }) {
                   numberOfLines={4}
                   maxLength={200}
                   showCharacterCount
-                  leftIcon={<Text style={styles.inputIcon}>📝</Text>}
+                  leftIcon={<Ionicons name="create-outline" size={20} color={COLORS.text.tertiary} />}
                 />
               </ScrollView>
 
@@ -461,19 +476,19 @@ export default function ProfileScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.surface.secondary,
+    backgroundColor: COLORS.warm.cream,
   },
 
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.surface.secondary,
+    backgroundColor: COLORS.warm.cream,
     padding: SPACING.xl,
   },
 
   loadingText: {
-    ...TYPOGRAPHY.styles.body,
+    fontSize: 15,
     color: COLORS.text.secondary,
     marginTop: SPACING.md,
   },
@@ -483,14 +498,14 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingBottom: SPACING.xxl,
+    paddingBottom: SPACING.xxl * 3,
   },
 
-  // Header
+  // Header - Clean minimal
   header: {
-    backgroundColor: COLORS.primary.main,
-    paddingTop: Platform.OS === 'ios' ? SPACING.huge : SPACING.xl,
-    paddingBottom: SPACING.xxl,
+    backgroundColor: COLORS.warm.cream,
+    paddingTop: Platform.OS === 'ios' ? 50 : SPACING.xl,
+    paddingBottom: SPACING.base,
   },
 
   headerContent: {
@@ -500,18 +515,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.base,
   },
 
+  settingsButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  settingsIcon: {
+    fontSize: 24,
+    color: COLORS.text.secondary,
+  },
+
   backButton: {
     width: 40,
     height: 40,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: COLORS.surface.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   backButtonText: {
     fontSize: 24,
-    color: COLORS.white,
+    color: COLORS.text.primary,
   },
 
   headerSpacer: {
@@ -520,12 +547,13 @@ const styles = StyleSheet.create({
 
   // Profile Section
   profileSection: {
-    marginTop: -SPACING.xxxl,
     paddingHorizontal: SPACING.base,
   },
 
   profileCard: {
     padding: SPACING.xl,
+    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: COLORS.white,
   },
 
   profileHeader: {
@@ -534,10 +562,9 @@ const styles = StyleSheet.create({
   },
 
   profileAvatar: {
-    marginBottom: SPACING.base,
-    borderWidth: 4,
-    borderColor: COLORS.white,
-    ...SHADOWS.md,
+    marginBottom: SPACING.md,
+    borderWidth: 3,
+    borderColor: COLORS.surface.tertiary,
   },
 
   profileInfo: {
@@ -545,18 +572,29 @@ const styles = StyleSheet.create({
   },
 
   profileName: {
-    ...TYPOGRAPHY.styles.h3,
+    fontSize: 22,
+    fontWeight: '700',
     color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
 
   profileBio: {
-    ...TYPOGRAPHY.styles.bodySmall,
+    fontSize: 14,
     color: COLORS.text.secondary,
     textAlign: 'center',
-    marginTop: SPACING.sm,
+    marginTop: SPACING.xs,
     lineHeight: 20,
-    paddingHorizontal: SPACING.base,
+  },
+
+  profileMeta: {
+    marginTop: SPACING.sm,
+  },
+
+  metaText: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 
   campusIdBadge: {
@@ -564,26 +602,26 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.md,
     borderRadius: BORDER_RADIUS.full,
-    marginTop: SPACING.xs,
+    marginTop: SPACING.sm,
   },
 
   campusIdText: {
-    ...TYPOGRAPHY.styles.caption,
+    fontSize: 12,
     color: COLORS.primary.main,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    fontWeight: '600',
   },
 
-  // Stats Row
+  // Stats Row - Clean centered style
   statsRow: {
     flexDirection: 'row',
+    justifyContent: 'center',
     paddingTop: SPACING.lg,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border.light,
+    paddingBottom: SPACING.sm,
   },
 
   statBox: {
-    flex: 1,
     alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
   },
 
   statBoxBorder: {
@@ -593,18 +631,18 @@ const styles = StyleSheet.create({
   },
 
   statNumber: {
-    ...TYPOGRAPHY.styles.h3,
+    fontSize: 20,
     color: COLORS.text.primary,
-    fontWeight: TYPOGRAPHY.weight.bold,
+    fontWeight: '700',
   },
 
   statIcon: {
-    fontSize: 24,
+    fontSize: 20,
     marginBottom: SPACING.xxs,
   },
 
   statLabel: {
-    ...TYPOGRAPHY.styles.caption,
+    fontSize: 12,
     color: COLORS.text.secondary,
     marginTop: SPACING.xxs,
   },
@@ -628,6 +666,8 @@ const styles = StyleSheet.create({
 
   actionCard: {
     marginBottom: 0,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
   },
 
   actionCardContent: {
@@ -636,17 +676,17 @@ const styles = StyleSheet.create({
   },
 
   actionIconCircle: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary.container,
+    backgroundColor: COLORS.secondary.container,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.base,
   },
 
   actionIcon: {
-    fontSize: 24,
+    fontSize: 22,
   },
 
   actionText: {
@@ -654,15 +694,15 @@ const styles = StyleSheet.create({
   },
 
   actionTitle: {
-    ...TYPOGRAPHY.styles.label,
+    fontSize: 15,
     color: COLORS.text.primary,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    fontWeight: '600',
   },
 
   actionDescription: {
-    ...TYPOGRAPHY.styles.caption,
+    fontSize: 12,
     color: COLORS.text.secondary,
-    marginTop: SPACING.xxs,
+    marginTop: 2,
   },
 
   // Items Section
@@ -671,7 +711,8 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    ...TYPOGRAPHY.styles.h4,
+    fontSize: 18,
+    fontWeight: '600',
     color: COLORS.text.primary,
     marginBottom: SPACING.base,
   },
@@ -681,17 +722,20 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
 
+  // Item Card - Horizontal list style
   itemCard: {
-    width: '48%',
-    backgroundColor: COLORS.surface.primary,
+    width: '100%',
+    backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
+    marginBottom: SPACING.sm,
+    flexDirection: 'row',
     ...SHADOWS.sm,
   },
 
   itemImage: {
-    width: '100%',
-    height: 160,
+    width: 80,
+    height: 80,
     backgroundColor: COLORS.surface.tertiary,
   },
 
@@ -701,44 +745,58 @@ const styles = StyleSheet.create({
   },
 
   itemPlaceholderIcon: {
-    fontSize: 48,
+    fontSize: 32,
   },
 
   itemDetails: {
+    flex: 1,
     padding: SPACING.sm,
+    justifyContent: 'center',
   },
 
   itemTitle: {
-    ...TYPOGRAPHY.styles.label,
+    fontSize: 14,
+    fontWeight: '600',
     color: COLORS.text.primary,
     marginBottom: SPACING.xs,
-    minHeight: 36,
   },
 
   itemPrice: {
-    ...TYPOGRAPHY.styles.h5,
+    fontSize: 16,
     color: COLORS.primary.main,
-    fontWeight: TYPOGRAPHY.weight.bold,
+    fontWeight: '700',
     marginBottom: SPACING.xs,
   },
 
   itemCategoryBadge: {
-    backgroundColor: COLORS.surface.tertiary,
+    backgroundColor: COLORS.primary.light,
     alignSelf: 'flex-start',
-    paddingVertical: SPACING.xxs,
+    paddingVertical: 2,
     paddingHorizontal: SPACING.sm,
     borderRadius: BORDER_RADIUS.sm,
   },
 
   itemCategoryText: {
-    ...TYPOGRAPHY.styles.caption,
-    color: COLORS.text.secondary,
     fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+
+  itemMenuButton: {
+    position: 'absolute',
+    top: SPACING.xs,
+    right: SPACING.xs,
+    padding: SPACING.xs,
+  },
+
+  itemMenuIcon: {
+    fontSize: 16,
+    color: COLORS.text.tertiary,
   },
 
   // Empty State
   emptyIcon: {
-    fontSize: 64,
+    fontSize: 56,
   },
 
   emptyListings: {
@@ -757,9 +815,9 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    backgroundColor: COLORS.surface.primary,
-    borderTopLeftRadius: BORDER_RADIUS.xl,
-    borderTopRightRadius: BORDER_RADIUS.xl,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: BORDER_RADIUS.xxl,
+    borderTopRightRadius: BORDER_RADIUS.xxl,
     maxHeight: '85%',
   },
 
@@ -775,7 +833,8 @@ const styles = StyleSheet.create({
   },
 
   modalTitle: {
-    ...TYPOGRAPHY.styles.h3,
+    fontSize: 20,
+    fontWeight: '700',
     color: COLORS.text.primary,
   },
 
@@ -789,7 +848,7 @@ const styles = StyleSheet.create({
   },
 
   inputIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
 
   modalActions: {

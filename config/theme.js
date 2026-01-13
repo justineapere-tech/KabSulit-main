@@ -1,7 +1,7 @@
 /**
  * KabSulit - Modern Design System
  * Based on CvSU (Cavite State University) Brand Colors
- * Design Philosophy: Clean, Modern, Accessible
+ * Design Philosophy: Clean, Modern, Warm & Accessible
  * References: Material Design 3, iOS HIG
  */
 
@@ -24,28 +24,41 @@ export const COLORS = {
   secondary: {
     main: '#F9A825',      // Rich gold
     light: '#FBC02D',     // Bright yellow
-    lighter: '#FFF176',   // Pale yellow
+    lighter: '#FFF59D',   // Pale yellow
     dark: '#F57F17',      // Dark gold
     container: '#FFFDE7', // Light yellow background
     onSecondary: '#000000', // Text on secondary
   },
   
+  // Warm Background Colors (Cream/Beige palette)
+  warm: {
+    cream: '#FFF8E7',     // Warm cream background
+    beige: '#F5E6D3',     // Soft beige
+    sand: '#EDE0CC',      // Sand color
+    honey: '#FFE4B5',     // Honey tone
+    butter: '#FFFBF0',    // Butter cream (very light)
+  },
+  
   // Surface Colors (backgrounds, cards)
   surface: {
     primary: '#FFFFFF',
-    secondary: '#F8F9FA',
-    tertiary: '#F1F3F5',
+    secondary: '#FFF8E7',  // Warm cream background
+    tertiary: '#F5E6D3',   // Soft beige
     elevated: '#FFFFFF',
     overlay: 'rgba(0, 0, 0, 0.5)',
+    card: '#FFFFFF',       // Card background
+    input: '#FFFFFF',      // Input field background
   },
   
   // Text Colors
   text: {
     primary: '#1A1A1A',
-    secondary: '#6C757D',
-    tertiary: '#ADB5BD',
-    disabled: '#DEE2E6',
+    secondary: '#5C5C5C',
+    tertiary: '#8E8E8E',
+    disabled: '#C0C0C0',
     inverse: '#FFFFFF',
+    accent: '#1B5E20',     // Green accent text
+    gold: '#B8860B',       // Gold accent text
   },
   
   // Semantic Colors
@@ -62,10 +75,11 @@ export const COLORS = {
   
   // Border & Divider
   border: {
-    light: '#E9ECEF',
-    main: '#DEE2E6',
-    dark: '#CED4DA',
+    light: '#F0E6D6',      // Warm light border
+    main: '#E5D9C8',       // Warm main border
+    dark: '#D4C4A8',       // Warm dark border
     focus: '#4CAF50',
+    input: '#E0D5C5',      // Input border
   },
   
   // Interactive States
@@ -76,10 +90,28 @@ export const COLORS = {
     disabled: 'rgba(0, 0, 0, 0.38)',
   },
   
+  // Badge/Chip Colors
+  badge: {
+    price: '#1B5E20',      // Green price badge
+    priceText: '#FFFFFF',
+    stock: '#4CAF50',      // Stock indicator
+    stockText: '#FFFFFF',
+    category: '#F5E6D3',   // Category chip
+    categoryText: '#5C5C5C',
+  },
+  
+  // Message Bubbles
+  message: {
+    sent: '#DCF8C6',       // Sent message bubble (light green)
+    received: '#FFFFFF',   // Received message bubble
+    sentText: '#1A1A1A',
+    receivedText: '#1A1A1A',
+  },
+  
   // Legacy support (will be deprecated)
   white: '#FFFFFF',
   black: '#1A1A1A',
-  background: '#F8F9FA',
+  background: '#FFF8E7',   // Warm cream
 };
 
 // ============================================================================

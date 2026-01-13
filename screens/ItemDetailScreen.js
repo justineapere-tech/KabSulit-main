@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,9 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, SIZES } from '../config/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../config/theme';
 import ConfirmModal from '../components/ConfirmModal';
 import SaveToCollectionsModal from '../components/SaveToCollectionsModal';
 import Card from '../components/Card';
@@ -31,6 +32,11 @@ export default function ItemDetailScreen({ route, navigation }) {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmPayload, setConfirmPayload] = useState(null);
   const [saveModalVisible, setSaveModalVisible] = useState(false);
+
+  // Hide the default stack header; we use a custom back button overlay
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
 
   useEffect(() => {
     let mounted = true;
@@ -151,7 +157,7 @@ export default function ItemDetailScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={COLORS.primary.main} />
         <Text style={styles.loadingText}>Loading item...</Text>
       </View>
     );
@@ -160,7 +166,7 @@ export default function ItemDetailScreen({ route, navigation }) {
   if (!item) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyIcon}>📦</Text>
+        <Ionicons name="cube-outline" size={64} color={COLORS.text.tertiary} />
         <Text style={styles.emptyTitle}>Item Not Found</Text>
         <Text style={styles.emptyDesc}>This item may have been removed or doesn't exist.</Text>
         <Button
@@ -184,7 +190,7 @@ export default function ItemDetailScreen({ route, navigation }) {
             <Image source={{ uri: item.image_url }} style={styles.image} />
           ) : (
             <View style={[styles.image, styles.placeholderImage]}>
-              <Text style={styles.placeholderIcon}>📷</Text>
+              <Ionicons name="camera-outline" size={48} color={COLORS.text.tertiary} />
               <Text style={styles.placeholderText}>No Image</Text>
             </View>
           )}
@@ -194,7 +200,7 @@ export default function ItemDetailScreen({ route, navigation }) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
           </TouchableOpacity>
 
           {/* Status Badge */}
@@ -269,7 +275,7 @@ export default function ItemDetailScreen({ route, navigation }) {
           {!isOwner && (
             <View style={styles.actionButtons}>
               <Button
-                title="💬 Message Seller"
+                title="Message Seller"
                 onPress={() => navigation.navigate('Chat', {
                   otherUserId: item.user_id,
                   otherUserName: seller?.full_name || 'Seller',
@@ -277,24 +283,30 @@ export default function ItemDetailScreen({ route, navigation }) {
                 variant="primary"
                 fullWidth
                 style={{ marginBottom: SPACING.sm }}
+                leftIcon={<Ionicons name="chatbubble-outline" size={20} color="#FFFFFF" />}
               />
               <Button
-                title="💾 Save to Collection"
+                title="Save to Collection"
                 onPress={() => setSaveModalVisible(true)}
                 variant="outline"
                 fullWidth
+                leftIcon={<Ionicons name="bookmark-outline" size={20} color={COLORS.primary.main} />}
               />
             </View>
           )}
 
           {isOwner && (
             <View style={styles.ownerActions}>
-              <Text style={styles.ownerBadge}>👤 You own this item</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: SPACING.md }}>
+                <Ionicons name="person" size={18} color={COLORS.primary.main} />
+                <Text style={styles.ownerBadge}>You own this item</Text>
+              </View>
               <Button
-                title="🗑️ Delete Item"
+                title="Delete Item"
                 onPress={handleDelete}
                 variant="danger"
                 fullWidth
+                leftIcon={<Ionicons name="trash-outline" size={20} color="#FFFFFF" />}
               />
             </View>
           )}
@@ -326,17 +338,17 @@ export default function ItemDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.warm.cream,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.warm.cream,
   },
   loadingText: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.textSecondary,
+    fontSize: 14,
+    color: COLORS.text.secondary,
     marginTop: SPACING.md,
   },
   emptyContainer: {
@@ -344,20 +356,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: SPACING.xl,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.warm.cream,
   },
   emptyIcon: {
     fontSize: 64,
     marginBottom: SPACING.lg,
   },
   emptyTitle: {
-    ...TYPOGRAPHY.styles.h2,
-    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.text.primary,
     marginBottom: SPACING.sm,
   },
   emptyDesc: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.textSecondary,
+    fontSize: 14,
+    color: COLORS.text.secondary,
     textAlign: 'center',
   },
   imageContainer: {
@@ -371,7 +384,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   placeholderImage: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.warm.cream,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -380,8 +393,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   placeholderText: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.textSecondary,
+    fontSize: 14,
+    color: COLORS.text.secondary,
   },
   backButton: {
     position: 'absolute',
@@ -397,7 +410,7 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 24,
-    color: COLORS.primary,
+    color: COLORS.primary.main,
     fontWeight: '700',
   },
   statusBadge: {
@@ -410,13 +423,13 @@ const styles = StyleSheet.create({
     ...SHADOWS.sm,
   },
   statusAvailableBadge: {
-    backgroundColor: COLORS.success,
+    backgroundColor: COLORS.semantic.success,
   },
   statusSoldBadge: {
-    backgroundColor: COLORS.error,
+    backgroundColor: COLORS.semantic.error,
   },
   statusBadgeText: {
-    ...TYPOGRAPHY.styles.caption,
+    fontSize: 11,
     color: COLORS.white,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -437,42 +450,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   priceLabel: {
-    ...TYPOGRAPHY.styles.caption,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: COLORS.text.secondary,
     marginBottom: SPACING.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   price: {
-    ...TYPOGRAPHY.styles.h1,
-    color: COLORS.secondary,
+    fontSize: 28,
     fontWeight: '800',
+    color: COLORS.secondary.main,
   },
   infoCard: {
     marginBottom: SPACING.md,
   },
   title: {
-    ...TYPOGRAPHY.styles.h2,
-    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.text.primary,
     marginBottom: SPACING.md,
   },
   descriptionSection: {
     marginTop: SPACING.md,
     paddingTop: SPACING.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.border.light,
   },
   sectionLabel: {
-    ...TYPOGRAPHY.styles.caption,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: COLORS.text.secondary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
   },
   description: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.text,
+    fontSize: 14,
+    color: COLORS.text.primary,
     lineHeight: 24,
   },
   sellerCard: {
@@ -488,13 +502,14 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.md,
   },
   sellerName: {
-    ...TYPOGRAPHY.styles.h5,
-    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
   sellerEmail: {
-    ...TYPOGRAPHY.styles.caption,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: COLORS.text.secondary,
   },
   actionButtons: {
     marginTop: SPACING.sm,
@@ -503,13 +518,13 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
   },
   ownerBadge: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.primary,
+    fontSize: 14,
+    color: COLORS.primary.main,
     textAlign: 'center',
     marginBottom: SPACING.md,
     padding: SPACING.md,
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.primary.container,
+    borderRadius: BORDER_RADIUS.lg,
     fontWeight: '600',
   },
 });

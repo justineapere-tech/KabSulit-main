@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from '../config/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../config/theme';
 import Card from '../components/Card';
 import Avatar from '../components/Avatar';
 import Button from '../components/Button';
@@ -30,6 +31,11 @@ export default function CommentsScreen({ navigation, route }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
+
+  // Hide the navigator header; we render our own screen header
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
 
   useEffect(() => {
     if (itemId) {
@@ -207,9 +213,12 @@ export default function CommentsScreen({ navigation, route }) {
             {comment.rating && (
               <View style={styles.ratingDisplay}>
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Text key={star} style={styles.ratingIcon}>
-                    {star <= comment.rating ? '⭐' : '☆'}
-                  </Text>
+                  <Ionicons 
+                    key={star}
+                    name={star <= comment.rating ? "star" : "star-outline"}
+                    size={16}
+                    color={star <= comment.rating ? COLORS.semantic.warning : COLORS.text.tertiary}
+                  />
                 ))}
               </View>
             )}
@@ -217,7 +226,7 @@ export default function CommentsScreen({ navigation, route }) {
         </View>
         {currentUser?.id === comment.user_id && (
           <TouchableOpacity onPress={() => handleDeleteComment(comment.id)}>
-            <Text style={styles.deleteIcon}>🗑️</Text>
+            <Ionicons name="trash-outline" size={20} color={COLORS.semantic.error} />
           </TouchableOpacity>
         )}
       </View>
@@ -236,12 +245,11 @@ export default function CommentsScreen({ navigation, route }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Reviews & Comments</Text>
         <View style={{ width: 40 }} />
       </View>
-
       {/* Item Preview */}
       <Card variant="elevated" style={styles.itemPreview}>
         <Text style={styles.itemTitle}>{item?.title}</Text>
@@ -252,7 +260,7 @@ export default function CommentsScreen({ navigation, route }) {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={COLORS.primary.main} />
         </View>
       ) : (
         <FlatList
@@ -262,7 +270,7 @@ export default function CommentsScreen({ navigation, route }) {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>💬</Text>
+              <Ionicons name="chatbubble-outline" size={64} color={COLORS.text.tertiary} />
               <Text style={styles.emptyText}>No comments yet</Text>
               <Text style={styles.emptySubtext}>Be the first to comment!</Text>
             </View>
@@ -284,9 +292,11 @@ export default function CommentsScreen({ navigation, route }) {
                 onPress={() => setRating(rating === star ? 0 : star)}
                 style={styles.starButton}
               >
-                <Text style={styles.starIcon}>
-                  {star <= rating ? '⭐' : '☆'}
-                </Text>
+                <Ionicons 
+                  name={star <= rating ? "star" : "star-outline"}
+                  size={32}
+                  color={star <= rating ? COLORS.semantic.warning : COLORS.text.tertiary}
+                />
               </TouchableOpacity>
             ))}
           </View>
@@ -296,22 +306,25 @@ export default function CommentsScreen({ navigation, route }) {
           <TextInput
             style={styles.commentInput}
             placeholder="Share your thoughts..."
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={COLORS.text.secondary}
             value={commentText}
             onChangeText={setCommentText}
             multiline
             maxLength={500}
             editable={!commenting}
           />
-          <Button
-            title={commenting ? '' : '→'}
+          <TouchableOpacity
+            style={styles.sendButton}
             onPress={handleAddComment}
             disabled={commenting || !commentText.trim()}
-            variant="primary"
-            style={styles.submitButton}
+            activeOpacity={0.8}
           >
-            {commenting && <ActivityIndicator size="small" color={COLORS.white} />}
-          </Button>
+            {commenting ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <Ionicons name="send" size={18} color={COLORS.white} />
+            )}
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
 
@@ -331,47 +344,45 @@ export default function CommentsScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.warm.cream,
   },
   header: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.warm.cream,
     paddingTop: Platform.OS === 'ios' ? 50 : SPACING.lg,
     paddingBottom: SPACING.md,
     paddingHorizontal: SPACING.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    ...SHADOWS.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.light,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backIcon: {
-    fontSize: 24,
-    color: COLORS.white,
-    fontWeight: '700',
-  },
   headerTitle: {
-    ...TYPOGRAPHY.styles.h5,
-    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text.primary,
   },
   itemPreview: {
     margin: SPACING.lg,
     marginBottom: SPACING.md,
   },
   itemTitle: {
-    ...TYPOGRAPHY.styles.h5,
-    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
   itemPrice: {
-    ...TYPOGRAPHY.styles.h4,
-    color: COLORS.secondary,
+    fontSize: 18,
+    color: COLORS.secondary.main,
     fontWeight: '700',
   },
   centerContainer: {
@@ -402,8 +413,9 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.sm,
   },
   commentAuthor: {
-    ...TYPOGRAPHY.styles.h5,
-    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text.primary,
   },
   ratingDisplay: {
     flexDirection: 'row',
@@ -415,17 +427,17 @@ const styles = StyleSheet.create({
   },
   deleteIcon: {
     fontSize: 20,
-    color: COLORS.error,
+    color: COLORS.semantic.error,
   },
   commentText: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.text,
+    fontSize: 14,
+    color: COLORS.text.primary,
     lineHeight: 22,
     marginBottom: SPACING.sm,
   },
   commentTime: {
-    ...TYPOGRAPHY.styles.caption,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: COLORS.text.secondary,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -436,30 +448,30 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   emptyText: {
-    ...TYPOGRAPHY.styles.h4,
-    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
   emptySubtext: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.textSecondary,
+    fontSize: 14,
+    color: COLORS.text.secondary,
   },
   inputContainer: {
     backgroundColor: COLORS.white,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.border.light,
     paddingBottom: Platform.OS === 'ios' ? SPACING.lg : SPACING.sm,
-    ...SHADOWS.sm,
   },
   ratingSelector: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.border.light,
   },
   ratingLabel: {
-    ...TYPOGRAPHY.styles.caption,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: COLORS.text.secondary,
     marginBottom: SPACING.sm,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -482,21 +494,33 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.warm.cream,
+    borderRadius: BORDER_RADIUS.full,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.text,
+    fontSize: 14,
+    color: COLORS.text.primary,
     maxHeight: 100,
     marginRight: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+  },
+  sendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primary.main,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SPACING.sm,
+    ...SHADOWS.sm,
   },
   submitButton: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS.full,
-    padding: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primary.main,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SPACING.sm,
+    ...SHADOWS.sm,
   },
 });

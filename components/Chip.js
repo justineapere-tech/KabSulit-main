@@ -51,10 +51,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: BORDER_RADIUS.full,
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.base,
     marginRight: SPACING.sm,
     marginBottom: SPACING.sm,
+    backgroundColor: COLORS.white,
   },
   
   icon: {
@@ -63,7 +64,7 @@ const styles = StyleSheet.create({
   
   // Variants
   default: {
-    backgroundColor: COLORS.surface.tertiary,
+    backgroundColor: COLORS.white,
     borderWidth: 0,
   },
   
@@ -87,28 +88,28 @@ const styles = StyleSheet.create({
   
   // Sizes
   small: {
-    paddingVertical: SPACING.xxs,
+    paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
   },
   
   medium: {
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.base,
   },
   
   large: {
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
   },
   
   // Label styles
   label: {
-    fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: TYPOGRAPHY.weight.medium,
+    fontSize: 13,
+    fontWeight: '500',
   },
   
   defaultLabel: {
-    color: COLORS.text.primary,
+    color: COLORS.text.secondary,
   },
   
   outlineLabel: {
@@ -126,14 +127,14 @@ const styles = StyleSheet.create({
   },
   
   smallLabel: {
-    fontSize: TYPOGRAPHY.size.xs,
+    fontSize: 11,
   },
   
   mediumLabel: {
-    fontSize: TYPOGRAPHY.size.sm,
+    fontSize: 13,
   },
   
   largeLabel: {
-    fontSize: TYPOGRAPHY.size.md,
+    fontSize: 15,
   },
 });

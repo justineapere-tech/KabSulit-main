@@ -9,17 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image,
-  Alert,
-  Animated,
-  Dimensions,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES, TYPOGRAPHY } from '../config/theme';
-import ConfirmModal from '../components/ConfirmModal';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../config/theme';
+
 import Avatar from '../components/Avatar';
 
-const { width } = Dimensions.get('window');
 
 export default function ChatScreen({ route, navigation }) {
   const { otherUserId, otherUserName } = route.params || {};
@@ -27,7 +23,6 @@ export default function ChatScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
   const [user, setUser] = useState(null);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const flatRef = useRef(null);
 
   // Hide the default navigation header
@@ -174,49 +169,6 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
-  const deleteConversation = async () => {
-    try {
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      console.log("Starting soft-delete for conversation:", { userId: user.id, otherUserId });
-
-      // Insert into conversation_visibility table to hide this conversation
-      const { error } = await supabase
-        .from("conversation_visibility")
-        .insert({
-          user_id: user.id,
-          other_user_id: otherUserId,
-          hidden_at: new Date().toISOString(),
-        })
-        .select();
-
-      if (error) {
-        // If it's a unique constraint error, update existing record instead
-        if (error.code === "23505") {
-          const { error: updateError } = await supabase
-            .from("conversation_visibility")
-            .update({ hidden_at: new Date().toISOString() })
-            .eq("user_id", user.id)
-            .eq("other_user_id", otherUserId);
-
-          if (updateError) {
-            throw updateError;
-          }
-        } else {
-          throw error;
-        }
-      }
-
-      console.log("Soft-delete complete - conversation hidden for current user");
-      setDeleteModalVisible(false);
-      navigation.goBack();
-    } catch (error) {
-      console.error("Delete conversation exception:", error);
-      Alert.alert("Error", error.message || "Failed to delete conversation");
-    }
-  };
 
   const renderItem = ({ item, index }) => {
     const mine = item.sender_id === user?.id;
@@ -272,7 +224,7 @@ export default function ChatScreen({ route, navigation }) {
               </Text>
               {mine && (
                 <Text style={styles.messageStatus}>
-                  {isTemp ? '⏱️' : item.is_read ? '✓✓' : '✓'}
+                  {isTemp ? 'Sending...' : item.is_read ? '✓✓' : '✓'}
                 </Text>
               )}
             </View>
@@ -319,12 +271,12 @@ export default function ChatScreen({ route, navigation }) {
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.headerContent}
-            onPress={() => navigation.navigate('Profile', { userId: otherUserId })}
+            onPress={() => navigation.navigate('UserProfile', { userId: otherUserId })}
             activeOpacity={0.7}
           >
             <View style={styles.avatarWrapper}>
@@ -339,14 +291,6 @@ export default function ChatScreen({ route, navigation }) {
               <Text style={styles.headerStatus}>Active now</Text>
             </View>
           </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => setDeleteModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.menuButtonText}>⋮</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -354,7 +298,7 @@ export default function ChatScreen({ route, navigation }) {
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIconContainer}>
-            <Text style={styles.emptyIcon}>💬</Text>
+            <Ionicons name="chatbubbles-outline" size={48} color={COLORS.primary.main} />
           </View>
           <Text style={styles.emptyTitle}>No messages yet</Text>
           <Text style={styles.emptySubtitle}>
@@ -376,10 +320,6 @@ export default function ChatScreen({ route, navigation }) {
       {/* Modern Message Input */}
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <TouchableOpacity style={styles.attachButton}>
-            <Text style={styles.attachButtonText}>📎</Text>
-          </TouchableOpacity>
-          
           <TextInput
             style={styles.input}
             value={text}
@@ -390,28 +330,19 @@ export default function ChatScreen({ route, navigation }) {
             maxLength={500}
           />
           
-          <TouchableOpacity
-            style={[styles.sendButton, !text.trim() && styles.sendButtonDisabled]}
-            onPress={sendMessage}
-            disabled={!text.trim()}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.sendButtonIcon}>
-              {text.trim() ? '➤' : '❤️'}
-            </Text>
-          </TouchableOpacity>
+          {text.trim() && (
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={sendMessage}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="send" size={18} color={COLORS.white} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      <ConfirmModal
-        visible={deleteModalVisible}
-        title="Delete Conversation"
-        message={`Are you sure you want to delete this conversation with ${otherUserName}? This cannot be undone.`}
-        onConfirm={deleteConversation}
-        onCancel={() => setDeleteModalVisible(false)}
-        confirmText="Delete"
-        cancelText="Cancel"
-      />
+      {/* Delete conversation modal removed */}
     </KeyboardAvoidingView>
   );
 }
@@ -419,20 +350,22 @@ export default function ChatScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: COLORS.primary.container,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F7FA',
+    backgroundColor: COLORS.primary.container,
   },
+  
+  // Header - Clean minimal style
   header: {
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: COLORS.warm.cream,
     paddingTop: Platform.OS === 'ios' ? 50 : SPACING.lg,
     paddingBottom: SPACING.md,
-    ...SHADOWS.md,
-    elevation: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.light,
   },
   headerGradient: {
     flexDirection: 'row',
@@ -442,20 +375,15 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.sm,
+    marginRight: SPACING.xs,
   },
   backButtonText: {
     fontSize: 28,
-    color: COLORS.white,
-    fontWeight: '600',
+    color: COLORS.text.primary,
+    fontWeight: '400',
     lineHeight: 28,
-    textAlign: 'center',
-    includeFontPadding: false,
-    marginTop: Platform.OS === 'android' ? -2 : 0,
   },
   headerContent: {
     flexDirection: 'row',
@@ -469,43 +397,37 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#4CAF50',
     borderWidth: 2,
-    borderColor: COLORS.primary.main,
+    borderColor: COLORS.warm.cream,
   },
   headerInfo: {
     flex: 1,
     marginLeft: SPACING.md,
   },
   headerTitle: {
-    fontSize: 18,
-    color: COLORS.white,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    fontSize: 17,
+    color: COLORS.text.primary,
+    fontWeight: '600',
   },
   headerStatus: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: '500',
+    fontSize: 12,
+    color: COLORS.text.tertiary,
     marginTop: 2,
   },
   menuButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuButtonText: {
     fontSize: 20,
-    color: COLORS.white,
-    fontWeight: '700',
-    lineHeight: 20,
-    textAlign: 'center',
+    color: COLORS.text.secondary,
+    fontWeight: '600',
   },
   
   // Empty State
@@ -516,35 +438,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xxl,
   },
   emptyIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOWS.lg,
+    ...SHADOWS.md,
     marginBottom: SPACING.xl,
   },
   emptyIcon: {
-    fontSize: 56,
+    fontSize: 48,
   },
   emptyTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text,
+    color: COLORS.text.primary,
     marginBottom: SPACING.sm,
   },
   emptySubtitle: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
+    fontSize: 15,
+    color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: 22,
   },
   
   // Messages List
   messagesList: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
+    paddingHorizontal: SPACING.base,
+    paddingTop: SPACING.md,
     paddingBottom: SPACING.xl,
   },
   
@@ -552,24 +474,23 @@ const styles = StyleSheet.create({
   dateSeparator: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: SPACING.lg,
+    marginVertical: SPACING.md,
   },
   dateSeparatorLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.border,
-    opacity: 0.5,
+    backgroundColor: COLORS.border.light,
   },
   dateSeparatorText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: COLORS.text.tertiary,
     fontWeight: '600',
     paddingHorizontal: SPACING.md,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   
-  // Message Bubbles
+  // Message Bubbles - WhatsApp-like style
   messageWrapper: {
     flexDirection: 'row',
     marginVertical: 2,
@@ -582,25 +503,25 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   avatarContainer: {
-    width: 32,
+    width: 28,
     marginRight: SPACING.sm,
     marginBottom: 4,
   },
   messageContent: {
-    maxWidth: '75%',
+    maxWidth: '78%',
   },
   messageBubble: {
-    paddingHorizontal: SPACING.md + 2,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: 20,
-    ...SHADOWS.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: 18,
   },
   bubbleLeft: {
     backgroundColor: COLORS.white,
     borderBottomLeftRadius: 4,
+    ...SHADOWS.xs,
   },
   bubbleRight: {
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: COLORS.message.sent,
     borderBottomRightRadius: 4,
   },
   bubbleTailLeft: {
@@ -617,74 +538,57 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   messageTextLeft: {
-    color: COLORS.text,
+    color: COLORS.text.primary,
   },
   messageTextRight: {
-    color: COLORS.white,
+    color: COLORS.text.primary,
   },
   messageMetadata: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
   },
   messageMetadataRight: {
     justifyContent: 'flex-end',
   },
   messageTime: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: COLORS.text.tertiary,
     fontWeight: '500',
   },
   messageStatus: {
-    fontSize: 12,
-    color: COLORS.primary.main,
+    fontSize: 11,
+    color: COLORS.primary.light,
     marginLeft: 4,
     fontWeight: '600',
   },
   
-  // Input Area
+  // Input Area - Clean minimal
   inputContainer: {
-    backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    paddingBottom: Platform.OS === 'ios' ? SPACING.xl : SPACING.md,
+    backgroundColor: COLORS.warm.cream,
+    paddingHorizontal: SPACING.base,
+    paddingVertical: SPACING.sm,
+    paddingBottom: Platform.OS === 'ios' ? SPACING.xl : SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    ...SHADOWS.md,
+    borderTopColor: COLORS.border.light,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: '#F5F7FA',
-    borderRadius: 24,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 6,
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  attachButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.xs,
-  },
-  attachButtonText: {
-    fontSize: 18,
-    opacity: 0.7,
-    lineHeight: 18,
-    textAlign: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.full,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 4,
+    minHeight: 44,
+    ...SHADOWS.sm,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.text,
+    color: COLORS.text.primary,
     maxHeight: 100,
     paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.xs,
   },
   sendButton: {
     width: 36,
@@ -693,17 +597,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary.main,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: SPACING.xs,
+    marginLeft: SPACING.sm,
     ...SHADOWS.sm,
   },
-  sendButtonDisabled: {
-    backgroundColor: '#E0E0E0',
-  },
   sendButtonIcon: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: COLORS.white,
-    lineHeight: 16,
     textAlign: 'center',
-  },
+  }
 });

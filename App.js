@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from './config/supabase';
 import { COLORS } from './config/theme';
 
@@ -28,7 +29,7 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarActiveTintColor: COLORS.secondary.main,
         tabBarInactiveTintColor: COLORS.gray400,
         tabBarStyle: {
           borderTopWidth: 1,
@@ -52,37 +53,7 @@ function MainTabs() {
         options={{
           tabBarLabel: 'Feed',
           tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>🛍</Text>
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="PostItem"
-        component={PostItemScreen}
-        options={{
-          tabBarLabel: 'Post',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>➕</Text>
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Messages"
-        component={MessagesScreen}
-        options={{
-          tabBarLabel: 'Messages',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>💬</Text>
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>👤</Text>
+            <Ionicons name="home" size={24} color={color} />
           ),
         }}
       />
@@ -92,7 +63,37 @@ function MainTabs() {
         options={{
           tabBarLabel: 'Saved',
           tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>💾</Text>
+            <Ionicons name="bookmark" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="PostItem"
+        component={PostItemScreen}
+        options={{
+          tabBarLabel: 'Post',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="add-circle" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Messages"
+        component={MessagesScreen}
+        options={{
+          tabBarLabel: 'Messages',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="chatbubbles" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person" size={24} color={color} />
           ),
         }}
       />
@@ -158,9 +159,9 @@ export default function App() {
             options={{ headerShown: true, title: 'Comments & Reviews', headerBackTitle: 'Back' }}
           />
           <Stack.Screen
-            name="Profile"
+            name="UserProfile"
             component={ProfileScreen}
-            options={{ headerShown: true, title: 'Profile' }}
+            options={{ headerShown: false }}
           />
         </Stack.Navigator>
       ) : (

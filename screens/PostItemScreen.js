@@ -11,6 +11,7 @@ import {
   Platform,
   Modal,
 } from "react-native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../config/supabase";
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, LAYOUT } from "../config/theme";
@@ -160,7 +161,10 @@ export default function PostItemScreen({ navigation }) {
         <View style={styles.formCard}>
           {/* Image Upload Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>📷 Item Photo</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="camera-outline" size={20} color={COLORS.text.secondary} />
+              <Text style={styles.sectionLabel}>Item Photo</Text>
+            </View>
             {image ? (
               <View style={styles.imageContainer}>
                 <Image source={{ uri: image }} style={styles.uploadedImage} />
@@ -168,7 +172,7 @@ export default function PostItemScreen({ navigation }) {
                   style={styles.removeImageButton}
                   onPress={() => setImage(null)}
                 >
-                  <Text style={styles.removeImageText}>✕</Text>
+                  <Ionicons name="close" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.changeImageButton}
@@ -342,29 +346,30 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: COLORS.warm.cream,
     paddingTop: Platform.OS === 'ios' ? SPACING.huge : SPACING.xl,
     paddingHorizontal: SPACING.base,
     paddingBottom: SPACING.xl,
   },
 
   headerTitle: {
-    ...TYPOGRAPHY.styles.h2,
-    color: COLORS.white,
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.text.primary,
     marginBottom: SPACING.xs,
   },
 
   headerSubtitle: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.secondary.lighter,
+    fontSize: 14,
+    color: COLORS.text.secondary,
   },
 
   // Form Card
   formCard: {
-    backgroundColor: COLORS.surface.primary,
+    backgroundColor: COLORS.secondary.main,
     marginTop: -SPACING.lg,
     marginHorizontal: SPACING.base,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xxl,
     padding: SPACING.xl,
     ...SHADOWS.md,
   },
@@ -374,7 +379,8 @@ const styles = StyleSheet.create({
   },
 
   sectionLabel: {
-    ...TYPOGRAPHY.styles.label,
+    fontSize: 13,
+    fontWeight: '600',
     color: COLORS.text.primary,
     marginBottom: SPACING.sm,
   },
@@ -382,19 +388,19 @@ const styles = StyleSheet.create({
   // Image Upload
   uploadPlaceholder: {
     borderWidth: 2,
-    borderColor: COLORS.primary.light,
+    borderColor: COLORS.primary.main,
     borderStyle: 'dashed',
     borderRadius: BORDER_RADIUS.lg,
     paddingVertical: SPACING.xxxl,
     alignItems: 'center',
-    backgroundColor: COLORS.primary.container,
+    backgroundColor: COLORS.white,
   },
 
   uploadIcon: {
     width: 80,
     height: 80,
-    borderRadius: BORDER_RADIUS.circle,
-    backgroundColor: COLORS.surface.primary,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.warm.cream,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.base,
@@ -405,13 +411,14 @@ const styles = StyleSheet.create({
   },
 
   uploadText: {
-    ...TYPOGRAPHY.styles.h5,
+    fontSize: 16,
+    fontWeight: '600',
     color: COLORS.primary.main,
     marginBottom: SPACING.xs,
   },
 
   uploadHint: {
-    ...TYPOGRAPHY.styles.caption,
+    fontSize: 12,
     color: COLORS.text.secondary,
   },
 
@@ -423,7 +430,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 240,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.surface.tertiary,
+    backgroundColor: COLORS.warm.cream,
   },
 
   removeImageButton: {
@@ -432,7 +439,7 @@ const styles = StyleSheet.create({
     right: SPACING.md,
     width: 36,
     height: 36,
-    borderRadius: BORDER_RADIUS.circle,
+    borderRadius: BORDER_RADIUS.full,
     backgroundColor: COLORS.semantic.error,
     alignItems: 'center',
     justifyContent: 'center',
@@ -442,20 +449,21 @@ const styles = StyleSheet.create({
   removeImageText: {
     color: COLORS.white,
     fontSize: 20,
-    fontWeight: TYPOGRAPHY.weight.bold,
+    fontWeight: '700',
   },
 
   changeImageButton: {
     marginTop: SPACING.base,
-    backgroundColor: COLORS.surface.tertiary,
+    backgroundColor: COLORS.white,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.base,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.full,
     alignSelf: 'center',
   },
 
   changeImageText: {
-    ...TYPOGRAPHY.styles.label,
+    fontSize: 13,
+    fontWeight: '600',
     color: COLORS.primary.main,
   },
 
@@ -480,18 +488,16 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface.primary,
-    borderWidth: 1,
-    borderColor: COLORS.border.main,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.full,
     paddingLeft: SPACING.base,
     marginRight: SPACING.sm,
   },
 
   currencySymbol: {
-    ...TYPOGRAPHY.styles.h4,
+    fontSize: 18,
+    fontWeight: '700',
     color: COLORS.primary.main,
-    fontWeight: TYPOGRAPHY.weight.bold,
     marginRight: SPACING.xs,
   },
 
@@ -501,7 +507,7 @@ const styles = StyleSheet.create({
   },
 
   priceInputText: {
-    ...TYPOGRAPHY.styles.h4,
+    fontSize: 18,
   },
 
   freeButton: {
@@ -509,7 +515,7 @@ const styles = StyleSheet.create({
   },
 
   priceHint: {
-    ...TYPOGRAPHY.styles.caption,
+    fontSize: 12,
     color: COLORS.text.tertiary,
     marginTop: SPACING.xs,
   },
@@ -522,15 +528,16 @@ const styles = StyleSheet.create({
 
   // Tips Card
   tipsCard: {
-    backgroundColor: COLORS.secondary.container,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.base,
     borderLeftWidth: 3,
-    borderLeftColor: COLORS.secondary.main,
+    borderLeftColor: COLORS.primary.main,
   },
 
   tipsTitle: {
-    ...TYPOGRAPHY.styles.label,
+    fontSize: 13,
+    fontWeight: '600',
     color: COLORS.text.primary,
     marginBottom: SPACING.sm,
   },
@@ -541,14 +548,14 @@ const styles = StyleSheet.create({
   },
 
   tipBullet: {
-    ...TYPOGRAPHY.styles.bodySmall,
-    color: COLORS.secondary.main,
+    fontSize: 13,
+    color: COLORS.primary.main,
     marginRight: SPACING.sm,
-    fontWeight: TYPOGRAPHY.weight.bold,
+    fontWeight: '700',
   },
 
   tipText: {
-    ...TYPOGRAPHY.styles.bodySmall,
+    fontSize: 13,
     color: COLORS.text.secondary,
     flex: 1,
   },
@@ -564,7 +571,7 @@ const styles = StyleSheet.create({
 
   successModal: {
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.xxl,
     padding: SPACING.xxl,
     width: '100%',
     maxWidth: 400,
@@ -589,15 +596,15 @@ const styles = StyleSheet.create({
   },
 
   successTitle: {
-    ...TYPOGRAPHY.styles.h3,
+    fontSize: 20,
+    fontWeight: '700',
     color: COLORS.text.primary,
-    fontWeight: TYPOGRAPHY.weight.bold,
     marginBottom: SPACING.sm,
     textAlign: 'center',
   },
 
   successMessage: {
-    ...TYPOGRAPHY.styles.body,
+    fontSize: 14,
     color: COLORS.text.secondary,
     textAlign: 'center',
     marginBottom: SPACING.xl,

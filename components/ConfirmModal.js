@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from '../config/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../config/theme';
 
 export default function ConfirmModal({
   visible,
@@ -46,20 +46,21 @@ const styles = StyleSheet.create({
   card: {
     width: '86%',
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
-    ...SHADOWS.medium,
+    ...SHADOWS.md,
   },
   title: {
-    fontSize: SIZES.lg,
+    fontSize: 17,
     fontWeight: '700',
-    color: COLORS.text,
+    color: COLORS.text.primary,
     marginBottom: SPACING.sm,
   },
   message: {
-    fontSize: SIZES.md,
-    color: COLORS.textSecondary,
+    fontSize: 14,
+    color: COLORS.text.secondary,
     marginBottom: SPACING.md,
+    lineHeight: 20,
   },
   actions: {
     flexDirection: 'row',
@@ -68,10 +69,10 @@ const styles = StyleSheet.create({
   btn: {
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.full,
   },
   cancel: {
-    backgroundColor: COLORS.surface.tertiary,
+    backgroundColor: COLORS.warm.cream,
   },
   confirm: {
     backgroundColor: COLORS.primary.main,
@@ -80,9 +81,11 @@ const styles = StyleSheet.create({
   cancelText: {
     color: COLORS.text.primary,
     fontWeight: '600',
+    fontSize: 14,
   },
   confirmText: {
-    color: COLORS.primary.onPrimary,
+    color: COLORS.white,
     fontWeight: '700',
+    fontSize: 14,
   },
 });

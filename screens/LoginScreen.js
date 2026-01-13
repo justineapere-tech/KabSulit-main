@@ -8,7 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from "../config/supabase";
 import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS, LAYOUT } from "../config/theme";
 import Button from "../components/Button";
@@ -19,6 +21,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -69,98 +72,110 @@ export default function LoginScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Hero Section */}
+        {/* Hero Section with Logo */}
         <View style={styles.heroSection}>
           <View style={styles.brandContainer}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoIcon}>🎓</Text>
-            </View>
-            <Text style={styles.appTitle}>KabSulit</Text>
-            <Text style={styles.appSubtitle}>CvSU Campus Marketplace</Text>
-            <View style={styles.universityBadge}>
-              <Text style={styles.badgeText}>Cavite State University</Text>
-            </View>
+            <Image
+              source={require('../assets/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
           </View>
         </View>
 
-        {/* Form Section */}
+        {/* Form Section - Yellow Card */}
         <View style={styles.formSection}>
           <View style={styles.formCard}>
-            <Text style={styles.welcomeTitle}>Welcome Back!</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Sign in to continue to your account
-            </Text>
+            {/* Welcome Header */}
+            <View style={styles.welcomeHeader}>
+              <Text style={styles.welcomeTitle}>Welcome Back!</Text>
+              <Text style={styles.welcomeSubtitle}>
+                Enter your details below
+              </Text>
+            </View>
 
-            {/* Email Input */}
-            <Input
-              label="Email Address"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="your.email@cvsu.edu.ph"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<Text style={styles.inputIcon}>✉️</Text>}
-            />
+            {/* Username/Email Input */}
+            <View style={styles.inputGroup}>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIconContainer}>
+                  <Ionicons name="person" size={20} color={COLORS.text.tertiary} />
+                </View>
+                <Input
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Username"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={styles.inputField}
+                  inputContainerStyle={styles.inputContainer}
+                />
+              </View>
+            </View>
 
             {/* Password Input */}
-            <Input
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              secureTextEntry={!showPassword}
-              leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
-              rightIcon={
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Text style={styles.inputIcon}>{showPassword ? "👁" : "👁‍🗨"}</Text>
-                </TouchableOpacity>
-              }
-            />
-
-            {/* Forgot Password */}
-            <TouchableOpacity
-              onPress={handleForgotPassword}
-              disabled={loading}
-              style={styles.forgotPassword}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            <View style={styles.inputGroup}>
+              <View style={styles.inputWrapper}>
+                <View style={styles.inputIconContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color={COLORS.text.tertiary} />
+                </View>
+                <Input
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  secureTextEntry={!showPassword}
+                  style={styles.inputField}
+                  inputContainerStyle={styles.inputContainer}
+                  rightIcon={
+                    <TouchableOpacity 
+                      onPress={() => setShowPassword(!showPassword)}
+                      style={styles.eyeButton}
+                    >
+                      <Ionicons name={showPassword ? "eye" : "eye-off"} size={20} color={COLORS.text.tertiary} />
+                    </TouchableOpacity>
+                  }
+                />
+              </View>
+            </View>
 
             {/* Login Button */}
-            <Button
-              title="Sign In"
-              onPress={handleLogin}
-              loading={loading}
-              variant="primary"
-              size="large"
-              fullWidth
+            <TouchableOpacity
               style={styles.loginButton}
-            />
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.loginButtonText}>
+                {loading ? "Signing in..." : "Log In"}
+              </Text>
+            </TouchableOpacity>
 
-            {/* Register Link */}
-            <View style={styles.registerPrompt}>
-              <Text style={styles.registerText}>New to KabSulit? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-                <Text style={styles.registerLink}>Create Account</Text>
+            {/* Remember Me & Forgot Password Row */}
+            <View style={styles.optionsRow}>
+              <TouchableOpacity 
+                style={styles.rememberMeContainer}
+                onPress={() => setRememberMe(!rememberMe)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                  {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+                </View>
+                <Text style={styles.rememberMeText}>Remember me</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={handleForgotPassword}
+                disabled={loading}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot Password</Text>
               </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Demo Credentials Info */}
-          <View style={styles.demoCard}>
-            <View style={styles.demoHeader}>
-              <Text style={styles.demoIcon}>ℹ️</Text>
-              <Text style={styles.demoTitle}>Demo Account</Text>
-            </View>
-            <View style={styles.demoContent}>
-              <View style={styles.demoRow}>
-                <Text style={styles.demoLabel}>Email:</Text>
-                <Text style={styles.demoValue}>demo@cvsu.edu.ph</Text>
-              </View>
-              <View style={styles.demoRow}>
-                <Text style={styles.demoLabel}>Password:</Text>
-                <Text style={styles.demoValue}>demo1234</Text>
-              </View>
+            {/* Sign Up Link */}
+            <View style={styles.signUpContainer}>
+              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                <Text style={styles.signUpLink}>Sign Up</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -172,7 +187,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.surface.secondary,
+    backgroundColor: COLORS.warm.cream,
   },
   
   scrollContent: {
@@ -181,171 +196,174 @@ const styles = StyleSheet.create({
   
   // Hero Section
   heroSection: {
-    backgroundColor: COLORS.primary.main,
-    paddingTop: Platform.OS === 'ios' ? SPACING.huge + SPACING.xl : SPACING.huge,
-    paddingBottom: SPACING.xxxl,
-    borderBottomLeftRadius: BORDER_RADIUS.xxl,
-    borderBottomRightRadius: BORDER_RADIUS.xxl,
+    backgroundColor: COLORS.warm.cream,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: SPACING.xl,
+    alignItems: 'center',
   },
   
   brandContainer: {
     alignItems: 'center',
   },
   
-  logoCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: BORDER_RADIUS.circle,
-    backgroundColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.base,
-    ...SHADOWS.lg,
-  },
-  
-  logoIcon: {
-    fontSize: 56,
-  },
-  
-  appTitle: {
-    ...TYPOGRAPHY.styles.hero,
-    color: COLORS.white,
-    marginBottom: SPACING.xs,
-  },
-  
-  appSubtitle: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.secondary.light,
-    marginBottom: SPACING.lg,
-  },
-  
-  universityBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  
-  badgeText: {
-    ...TYPOGRAPHY.styles.caption,
-    color: COLORS.white,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
-    letterSpacing: 0.5,
+  logo: {
+    width: 280,
+    height: 150,
   },
   
   // Form Section
   formSection: {
     flex: 1,
-    marginTop: -SPACING.xl,
-    paddingHorizontal: SPACING.base,
+    paddingHorizontal: SPACING.lg,
   },
   
   formCard: {
-    backgroundColor: COLORS.surface.primary,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.xl,
-    ...SHADOWS.md,
+    backgroundColor: COLORS.secondary.main,
+    borderRadius: BORDER_RADIUS.xxl,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxxl,
+    ...SHADOWS.lg,
+  },
+  
+  welcomeHeader: {
+    alignItems: 'center',
+    marginBottom: SPACING.xxl,
   },
   
   welcomeTitle: {
-    ...TYPOGRAPHY.styles.h2,
-    color: COLORS.text.primary,
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.primary.main,
     marginBottom: SPACING.xs,
   },
   
   welcomeSubtitle: {
-    ...TYPOGRAPHY.styles.bodySmall,
+    fontSize: 15,
     color: COLORS.text.secondary,
-    marginBottom: SPACING.xl,
   },
   
-  inputIcon: {
-    fontSize: 20,
-  },
-  
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: SPACING.lg,
-  },
-  
-  forgotPasswordText: {
-    ...TYPOGRAPHY.styles.bodySmall,
-    color: COLORS.primary.main,
-    fontWeight: TYPOGRAPHY.weight.semiBold,
-  },
-  
-  loginButton: {
+  // Input Styles
+  inputGroup: {
     marginBottom: SPACING.base,
   },
   
-  registerPrompt: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.full,
+    paddingLeft: SPACING.base,
+    ...SHADOWS.sm,
+  },
+  
+  inputIconContainer: {
+    width: 30,
+    alignItems: 'center',
+  },
+  
+  inputIconEmoji: {
+    fontSize: 18,
+  },
+  
+  inputField: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  
+  inputContainer: {
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: SPACING.sm,
+    minHeight: 50,
+  },
+  
+  eyeButton: {
+    padding: SPACING.sm,
+  },
+  
+  eyeIcon: {
+    fontSize: 18,
+  },
+  
+  // Login Button
+  loginButton: {
+    backgroundColor: COLORS.black,
+    borderRadius: BORDER_RADIUS.full,
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+    marginTop: SPACING.lg,
+    ...SHADOWS.md,
+  },
+  
+  loginButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  // Options Row
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: SPACING.lg,
+  },
+  
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1.5,
+    borderColor: COLORS.text.secondary,
+    borderRadius: 3,
+    marginRight: SPACING.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
+  },
+  
+  checkboxChecked: {
+    backgroundColor: COLORS.primary.main,
+    borderColor: COLORS.primary.main,
+  },
+  
+  checkmark: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  
+  rememberMeText: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+  },
+  
+  forgotPasswordText: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    fontWeight: '500',
+  },
+  
+  // Sign Up
+  signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.base,
+    marginTop: SPACING.xxl,
   },
   
-  registerText: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.text.secondary,
-  },
-  
-  registerLink: {
-    ...TYPOGRAPHY.styles.body,
-    color: COLORS.primary.main,
-    fontWeight: TYPOGRAPHY.weight.bold,
-  },
-  
-  // Demo Card
-  demoCard: {
-    backgroundColor: COLORS.secondary.container,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.base,
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.xl,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.secondary.main,
-  },
-  
-  demoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  
-  demoIcon: {
-    fontSize: 18,
-    marginRight: SPACING.xs,
-  },
-  
-  demoTitle: {
-    ...TYPOGRAPHY.styles.label,
+  signUpText: {
+    fontSize: 14,
     color: COLORS.text.primary,
-    fontWeight: TYPOGRAPHY.weight.bold,
   },
   
-  demoContent: {
-    marginLeft: SPACING.xl,
-  },
-  
-  demoRow: {
-    flexDirection: 'row',
-    marginBottom: SPACING.xxs,
-  },
-  
-  demoLabel: {
-    ...TYPOGRAPHY.styles.bodySmall,
-    color: COLORS.text.secondary,
-    width: 80,
-    fontWeight: TYPOGRAPHY.weight.medium,
-  },
-  
-  demoValue: {
-    ...TYPOGRAPHY.styles.bodySmall,
+  signUpLink: {
+    fontSize: 14,
     color: COLORS.text.primary,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    fontWeight: TYPOGRAPHY.weight.semiBold,
+    fontWeight: '700',
   },
 });

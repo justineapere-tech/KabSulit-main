@@ -9,8 +9,9 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, SIZES } from '../config/theme';
+import { COLORS, SPACING, BORDER_RADIUS } from '../config/theme';
 
 export default function SaveToCollectionsModal({
   visible,
@@ -192,7 +193,7 @@ export default function SaveToCollectionsModal({
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity onPress={onClose}>
-                <Text style={styles.closeButton}>✕</Text>
+                <Ionicons name="close" size={24} color={COLORS.text.secondary} />
               </TouchableOpacity>
               <Text style={styles.title}>Save to Collections</Text>
               <View style={{ width: 30 }} />
@@ -201,7 +202,7 @@ export default function SaveToCollectionsModal({
             {/* Collections List */}
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
+                <ActivityIndicator size="large" color={COLORS.primary.main} />
               </View>
             ) : (
               <ScrollView style={styles.body}>
@@ -214,7 +215,10 @@ export default function SaveToCollectionsModal({
                     {allItems && <Text style={styles.checkmark}>✓</Text>}
                   </View>
                   <View style={styles.collectionInfo}>
-                    <Text style={styles.collectionName}>📦 All Items</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="cube-outline" size={18} color={COLORS.text.secondary} />
+                      <Text style={styles.collectionName}>All Items</Text>
+                    </View>
                     <Text style={styles.collectionDesc}>Default collection</Text>
                   </View>
                 </TouchableOpacity>
@@ -228,7 +232,10 @@ export default function SaveToCollectionsModal({
                     {favorites && <Text style={styles.checkmark}>✓</Text>}
                   </View>
                   <View style={styles.collectionInfo}>
-                    <Text style={styles.collectionName}>⭐ My Favorites</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="star" size={18} color={COLORS.semantic.warning} />
+                      <Text style={styles.collectionName}>My Favorites</Text>
+                    </View>
                     <Text style={styles.collectionDesc}>Default collection</Text>
                   </View>
                 </TouchableOpacity>
@@ -250,7 +257,7 @@ export default function SaveToCollectionsModal({
                         </View>
                         <View style={styles.collectionInfo}>
                           <Text style={styles.collectionName}>
-                            📁 {collection.name}
+                            <Ionicons name="folder-outline" size={16} color={COLORS.text.secondary} /> {collection.name}
                           </Text>
                         </View>
                       </TouchableOpacity>
@@ -282,7 +289,7 @@ export default function SaveToCollectionsModal({
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator color={COLORS.primary.onPrimary} />
+                  <ActivityIndicator color={COLORS.white} />
                 ) : (
                   <Text style={styles.saveButtonText}>Save Item</Text>
                 )}
@@ -306,8 +313,8 @@ const styles = StyleSheet.create({
   },
   content: {
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: BORDER_RADIUS.xl,
-    borderTopRightRadius: BORDER_RADIUS.xl,
+    borderTopLeftRadius: BORDER_RADIUS.xxl,
+    borderTopRightRadius: BORDER_RADIUS.xxl,
     maxHeight: '90%',
     paddingBottom: SPACING.lg,
   },
@@ -318,17 +325,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.border.light,
   },
   closeButton: {
-    fontSize: SIZES.xl,
-    color: COLORS.textSecondary,
+    fontSize: 20,
+    color: COLORS.text.secondary,
     fontWeight: '600',
   },
   title: {
-    fontSize: SIZES.lg,
+    fontSize: 17,
     fontWeight: '700',
-    color: COLORS.text,
+    color: COLORS.text.primary,
     flex: 1,
     textAlign: 'center',
   },
@@ -342,9 +349,9 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
   },
   sectionTitle: {
-    fontSize: SIZES.sm,
+    fontSize: 12,
     fontWeight: '700',
-    color: COLORS.secondary,
+    color: COLORS.text.tertiary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: SPACING.lg,
@@ -355,45 +362,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.gray50,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.warm.cream,
+    borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.md,
   },
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.sm,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: COLORS.primary.main,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
   },
   checkmark: {
-    color: COLORS.primary,
-    fontSize: SIZES.md,
+    color: COLORS.primary.main,
+    fontSize: 14,
     fontWeight: '700',
   },
   collectionInfo: {
     flex: 1,
   },
   collectionName: {
-    fontSize: SIZES.md,
+    fontSize: 15,
     fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
+    color: COLORS.text.primary,
+    marginBottom: 2,
   },
   collectionDesc: {
-    fontSize: SIZES.xs,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: COLORS.text.secondary,
   },
   emptyCollections: {
     paddingVertical: SPACING.xl,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    color: COLORS.text.secondary,
     textAlign: 'center',
   },
   footer: {
@@ -401,30 +408,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.border.light,
     gap: SPACING.md,
   },
   button: {
     flex: 1,
     paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: BORDER_RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: COLORS.gray100,
+    backgroundColor: COLORS.warm.cream,
   },
   cancelButtonText: {
-    color: COLORS.text,
+    color: COLORS.text.primary,
     fontWeight: '600',
-    fontSize: SIZES.md,
+    fontSize: 15,
   },
   saveButton: {
     backgroundColor: COLORS.primary.main,
   },
   saveButtonText: {
-    color: COLORS.primary.onPrimary,
+    color: COLORS.white,
     fontWeight: '700',
-    fontSize: SIZES.md,
+    fontSize: 15,
   },
 });

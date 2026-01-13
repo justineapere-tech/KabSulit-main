@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, TYPOGRAPHY } from '../config/theme';
+import { COLORS, SPACING } from '../config/theme';
 import Button from './Button';
 
 /**
@@ -47,18 +47,18 @@ const styles = StyleSheet.create({
   },
   
   title: {
-    fontSize: TYPOGRAPHY.size.xl,
-    fontWeight: TYPOGRAPHY.weight.bold,
+    fontSize: 18,
+    fontWeight: '700',
     color: COLORS.text.primary,
     textAlign: 'center',
     marginBottom: SPACING.sm,
   },
   
   description: {
-    fontSize: TYPOGRAPHY.size.md,
+    fontSize: 14,
     color: COLORS.text.secondary,
     textAlign: 'center',
-    lineHeight: TYPOGRAPHY.size.md * 1.5,
+    lineHeight: 21,
     marginBottom: SPACING.xl,
   },
   
