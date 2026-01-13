@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from './config/supabase';
 import { COLORS } from './config/theme';
@@ -30,10 +31,10 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: COLORS.secondary.main,
-        tabBarInactiveTintColor: COLORS.gray400,
+        tabBarInactiveTintColor: COLORS.text.tertiary,
         tabBarStyle: {
           borderTopWidth: 1,
-          borderTopColor: COLORS.border,
+          borderTopColor: COLORS.border.main,
           backgroundColor: COLORS.white,
           height: 60,
           paddingBottom: 8,
@@ -133,49 +134,57 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      {session ? (
-        // User is logged in - show main app
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen
-            name="ItemDetail"
-            component={ItemDetailScreen}
-            options={{ headerShown: true, title: 'Item Details' }}
-          />
-          <Stack.Screen
-            name="MyItems"
-            component={MyItemsScreen}
-            options={{ headerShown: true, title: 'My Items' }}
-          />
-          <Stack.Screen
-            name="Chat"
-            component={ChatScreen}
-            options={{ headerShown: true, title: 'Messages' }}
-          />
-          <Stack.Screen
-            name="Comments"
-            component={CommentsScreen}
-            options={{ headerShown: true, title: 'Comments & Reviews', headerBackTitle: 'Back' }}
-          />
-          <Stack.Screen
-            name="UserProfile"
-            component={ProfileScreen}
-            options={{ headerShown: false }}
-          />
-        </Stack.Navigator>
-      ) : (
-        // User is not logged in - show auth screens
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-        </Stack.Navigator>
-      )}
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+        <NavigationContainer>
+          {session ? (
+            // User is logged in - show main app
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen
+                name="ItemDetail"
+                component={ItemDetailScreen}
+                options={{ headerShown: true, title: 'Item Details' }}
+              />
+              <Stack.Screen
+                name="MyItems"
+                component={MyItemsScreen}
+                options={{ headerShown: true, title: 'My Items' }}
+              />
+              <Stack.Screen
+                name="Chat"
+                component={ChatScreen}
+                options={{ headerShown: true, title: 'Messages' }}
+              />
+              <Stack.Screen
+                name="Comments"
+                component={CommentsScreen}
+                options={{ headerShown: true, title: 'Comments & Reviews', headerBackTitle: 'Back' }}
+              />
+              <Stack.Screen
+                name="UserProfile"
+                component={ProfileScreen}
+                options={{ headerShown: false }}
+              />
+            </Stack.Navigator>
+          ) : (
+            // User is not logged in - show auth screens
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </Stack.Navigator>
+          )}
+        </NavigationContainer>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.warm?.cream || COLORS.white,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

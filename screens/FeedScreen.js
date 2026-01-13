@@ -336,7 +336,7 @@ export default function FeedScreen({ navigation }) {
       >
         {item.image_url ? (
           <Image
-            source={{ uri: item.image_url }}
+            source={{ uri: String(item.image_url) }}
             style={styles.itemImage}
             resizeMode="cover"
           />
@@ -440,7 +440,9 @@ export default function FeedScreen({ navigation }) {
       {/* Search Bar */}
       <View style={styles.searchSection}>
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={COLORS.text.tertiary} style={{ marginRight: SPACING.sm }} />
+          <View style={{ marginRight: SPACING.sm }}>
+            <Ionicons name="search" size={20} color={COLORS.text.tertiary} />
+          </View>
           <TextInput
             style={styles.searchInput}
             placeholder="Search posts..."
@@ -479,7 +481,7 @@ export default function FeedScreen({ navigation }) {
       <FlatList
         data={filteredItems}
         renderItem={renderItemCard}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -489,7 +491,6 @@ export default function FeedScreen({ navigation }) {
             colors={[COLORS.primary.main]}
             tintColor={COLORS.primary.main}
             progressBackgroundColor={COLORS.white}
-            size={50}
           />
         }
         onEndReached={handleEndReached}

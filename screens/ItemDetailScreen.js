@@ -187,7 +187,7 @@ export default function ItemDetailScreen({ route, navigation }) {
         {/* Hero Image */}
         <View style={styles.imageContainer}>
           {item.image_url ? (
-            <Image source={{ uri: item.image_url }} style={styles.image} />
+            <Image source={{ uri: String(item.image_url) }} style={styles.image} />
           ) : (
             <View style={[styles.image, styles.placeholderImage]}>
               <Ionicons name="camera-outline" size={48} color={COLORS.text.tertiary} />

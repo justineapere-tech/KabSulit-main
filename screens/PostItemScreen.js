@@ -167,7 +167,7 @@ export default function PostItemScreen({ navigation }) {
             </View>
             {image ? (
               <View style={styles.imageContainer}>
-                <Image source={{ uri: image }} style={styles.uploadedImage} />
+                <Image source={{ uri: String(image) }} style={styles.uploadedImage} />
                 <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() => setImage(null)}

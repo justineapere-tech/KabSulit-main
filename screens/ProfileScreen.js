@@ -157,7 +157,7 @@ export default function ProfileScreen({ navigation, route }) {
       activeOpacity={0.9}
     >
       {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+        <Image source={{ uri: String(item.image_url) }} style={styles.itemImage} />
       ) : (
         <View style={[styles.itemImage, styles.itemPlaceholder]}>
           <Ionicons name="cube-outline" size={32} color={COLORS.text.tertiary} />

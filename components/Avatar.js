@@ -45,7 +45,7 @@ export default function Avatar({
     >
       {imageUri ? (
         <Image
-          source={{ uri: imageUri }}
+          source={{ uri: String(imageUri) }}
           style={[
             styles.image,
             { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },

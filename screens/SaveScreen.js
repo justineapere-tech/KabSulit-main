@@ -286,7 +286,7 @@ export default function SaveScreen({ navigation }) {
     >
       <View style={styles.itemImageContainer}>
         {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+          <Image source={{ uri: String(item.image_url) }} style={styles.itemImage} />
         ) : (
           <View style={[styles.itemImage, styles.placeholderImage]}>
             <Ionicons name="camera-outline" size={32} color={COLORS.text.tertiary} />
